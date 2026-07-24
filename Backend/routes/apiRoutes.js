@@ -1,7 +1,4 @@
-// Import Express
 import express from "express";
-
-// Import feature routes
 import testRoutes from "./test.routes.js";
 // In the future we'll also import:
 // import authRoutes from "./auth.routes.js";
@@ -11,15 +8,6 @@ import testRoutes from "./test.routes.js";
 // Create a router instance
 const router = express.Router();
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-| All application routes are registered here.
-| This keeps app.js clean and makes the project scalable.
-|--------------------------------------------------------------------------
-*/
-
 // Health check route
 router.use("/test", testRoutes);
 
@@ -28,5 +16,4 @@ router.use("/test", testRoutes);
 // router.use("/upload", uploadRoutes);
 // router.use("/chat", chatRoutes);
 
-// Export router
 export default router;

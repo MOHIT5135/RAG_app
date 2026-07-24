@@ -5,13 +5,16 @@ import dotenv from 'dotenv';
 
 import apiRoutes from "./routes/apiRoutes.js";
 import documentRoutes from './routes/documentRoute.js';
-// import testRoutes from './routes/test.routes.js';
 import { connectDB } from './config/db.js';
 import { requestLogger } from './middlewares/logger.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 
 // Init environment configurations
 dotenv.config();
+
+if (!process.env.MONGO_URI) {
+    throw new Error("MONGO_URI is missing in .env file");
+}
 
 // Establish core database infrastructure connection
 connectDB();
@@ -35,8 +38,17 @@ if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads');
 }
 
-// API Routing Table Setup
+//------------------------------------------ API ROUTES --------------------------------------------------------
+
+// Register all API routes
+app.use("/api", apiRoutes);
+
+//----------------------------------- Existing Document Routes --------------------------------------------------
+
 app.use('/api/v1/documents', documentRoutes);
+
+
+// ----------------------------------------- 404 Handler --------------------------------------------------------
 
 // Fallback Route for non-existent Endpoints
 app.use((req, res, next) => {
@@ -44,11 +56,11 @@ app.use((req, res, next) => {
   next(new Error(`Requested resource not found: ${req.originalUrl}`));
 });
 
-// Centralised Error Handling Pipeline Placement
+//---------------------------------------------------------------------------------------------------------------
+
+// Global Error Handler
+
 app.use(errorHandler);
-// Bind the router endpoints
-app.use('/api/documents', documentRoutes);
-app.use("/api", apiRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server executing smoothly on port ${PORT}`));

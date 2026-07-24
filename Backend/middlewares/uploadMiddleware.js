@@ -1,33 +1,76 @@
-import multer from 'multer';
-import path from 'path';
+import multer from "multer";
+import path from "path";
 
-// Setup storage engine to save files locally in an 'uploads' directory
+// Configure how uploaded files are stored
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    // Generate a unique suffix to avoid overwriting files with duplicate names
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`);
-  }
+
+    // Folder where uploaded documents will be stored
+    destination: (req, file, cb) => {
+        cb(null, "uploads/documents/");
+    },
+
+    // Generate a unique filename to prevent overwriting
+    filename: (req, file, cb) => {
+
+        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+
+        cb(
+            null,
+            `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`
+        );
+    }
+
 });
 
-// Enforce specific file type filters appropriate for standard RAG ingestion
+// Validate uploaded files
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ['.pdf', '.docx', '.doc', '.txt'];
-  const ext = path.extname(file.originalname).toLowerCase();
-  
-  if (allowedTypes.includes(ext)) {
-    cb(null, true);
-  } else {
-    cb(new Error(`Invalid file type. Only ${allowedTypes.join(', ')} are allowed.`), false);
-  }
+
+    // Allowed extensions
+    const allowedExtensions = [
+        ".pdf",
+        ".docx",
+        ".doc",
+        ".txt"
+    ];
+
+    // Allowed MIME types
+    const allowedMimeTypes = [
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/msword",
+        "text/plain"
+    ];
+
+    const extension = path.extname(file.originalname).toLowerCase();
+
+    const isExtensionValid = allowedExtensions.includes(extension);
+    const isMimeTypeValid = allowedMimeTypes.includes(file.mimetype);
+
+    if (isExtensionValid && isMimeTypeValid) {
+        cb(null, true);
+    } else {
+        cb(
+            new Error(
+                `Invalid file type. Only ${allowedExtensions.join(", ")} files are allowed.`
+            ),
+            false
+        );
+    }
+
 };
 
-// Limit uploading to a maximum of 10 files per request, 10MB each
+// Export configured multer instance
 export const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 } 
+
+    storage,
+
+    fileFilter,
+
+    limits: {
+
+        // Maximum size per file = 10 MB
+        fileSize: 10 * 1024 * 1024
+
+    }
+
 });
