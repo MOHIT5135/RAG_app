@@ -20,7 +20,7 @@ function App() {
 
       } catch (error) {
 
-        console.log("Backend is not running yet.");
+        console.log("Unable to connect to backend.");
 
       }
 

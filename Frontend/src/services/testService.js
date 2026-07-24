@@ -7,7 +7,7 @@ export const checkBackendConnection = async () => {
     try {
 
         // Send GET request
-        const response = await api.get("/");
+        const response = await api.get("/test");
 
         // Return backend response
         return response.data;
