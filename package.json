@@ -1,0 +1,25 @@
+{
+  "name": "rag_app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MOHIT5135/RAG_app.git"
+  },
+  "keywords": [],
+  "author": "Mohit",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/MOHIT5135/RAG_app/issues"
+  },
+  "homepage": "https://github.com/MOHIT5135/RAG_app#readme",
+  "dependencies": {
+    "@google/genai": "^2.13.0",
+    "dotenv": "^17.4.2"
+  }
+}
