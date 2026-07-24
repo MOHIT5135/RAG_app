@@ -1,10 +1,26 @@
-import { GoogleGenAI } from "@google/genai";
-import 'dotenv/config';
+import express from 'express';
+import fs from 'fs';
+import cors from 'cors'
+import documentRoutes from './routes/documentRoute.js';
 
-const ai = new GoogleGenAI({});
+const app = express();
 
-const interaction = await ai.interactions.create({
-  model: "gemini-3.6-flash",
-  input: "Explain the stack in DSA using diagrams.",
-});
-console.log(interaction.output_text);
+// Enable CORS so your frontend (e.g., http://localhost:3000) can talk to your backend
+app.use(cors({
+  origin: 'http://localhost:5000', // Change this to your exact frontend URL
+  methods: ['GET', 'POST'],
+  credentials: true
+}));
+
+// Automatically generate target storage directory if missing locally
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads');
+}
+
+app.use(express.json());
+
+// Bind the router endpoints
+app.use('/api/documents', documentRoutes);
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server executing smoothly on port ${PORT}`));
