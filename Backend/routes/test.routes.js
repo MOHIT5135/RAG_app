@@ -3,7 +3,7 @@ import express from "express";
 const router = express.Router();
 
 // Health check route
-router.get("/", (req, res) => {
+router.get("/test", (req, res) => {
     res.json({
         success: true,
         message: "Backend Connected Successfully"

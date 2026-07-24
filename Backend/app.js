@@ -1,8 +1,20 @@
 import express from 'express';
 import fs from 'fs';
 import cors from 'cors'
+import dotenv from 'dotenv';
+
+import apiRoutes from "./routes/apiRoutes.js";
 import documentRoutes from './routes/documentRoute.js';
-import testRoutes from './routes/test.routes.js';
+// import testRoutes from './routes/test.routes.js';
+import { connectDB } from './config/db.js';
+import { requestLogger } from './middlewares/logger.js';
+import { errorHandler } from './middlewares/errorHandler.js';
+
+// Init environment configurations
+dotenv.config();
+
+// Establish core database infrastructure connection
+connectDB();
 
 const app = express();
 
@@ -13,16 +25,30 @@ app.use(cors({
     credentials: true
 }));
 
+// Global Core Middlewares
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(requestLogger);
+
 // Automatically generate target storage directory if missing locally
 if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads');
 }
 
-app.use(express.json());
+// API Routing Table Setup
+app.use('/api/v1/documents', documentRoutes);
 
+// Fallback Route for non-existent Endpoints
+app.use((req, res, next) => {
+  res.status(404);
+  next(new Error(`Requested resource not found: ${req.originalUrl}`));
+});
+
+// Centralised Error Handling Pipeline Placement
+app.use(errorHandler);
 // Bind the router endpoints
 app.use('/api/documents', documentRoutes);
-app.use("/api/test", testRoutes);
+app.use("/api", apiRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server executing smoothly on port ${PORT}`));
