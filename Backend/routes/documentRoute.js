@@ -1,7 +1,10 @@
 import express from "express";
+import fs from "fs/promises";
+import path from "path";
 import { upload } from "../middlewares/uploadMiddleware.js";
 import { extractTextFromFile } from "../services/documentProcessor.js";
-
+import { chunkFiles } from "../services/chunkService.js";
+import { embedChunkedFiles } from "../services/embeddingService.js";
 const router = express.Router();
 
 /*
@@ -40,13 +43,6 @@ router.post("/upload", upload.array("documents", 10), async (req, res) => {
             // Extract text from uploaded file
             const extractedText = await extractTextFromFile(file.path);
 
-            // Print first few characters in terminal
-            console.log("\n======================================");
-            console.log(`File : ${file.originalname}`);
-            console.log("Extracted Text Preview:");
-            console.log(extractedText.substring(0, 500));
-            console.log("======================================\n");
-
             processedFiles.push({
                 originalName: file.originalname,
                 filename: file.filename,
@@ -57,12 +53,42 @@ router.post("/upload", upload.array("documents", 10), async (req, res) => {
                 extractedText
             });
         }
+        // Step 1: Chunk
+        const chunkedResults = await chunkFiles(
+            processedFiles.map(f => ({ originalName: f.originalName, extractedText: f.extractedText })),
+            { chunkSize: 1000, chunkOverlap: 200 }
+        );
+        // TEMP: confirm chunking worked before embedding runs
+        console.log("✅ Chunking result:", JSON.stringify(chunkedResults.map(r => ({
+            file: r.originalName,
+            totalChunks: r.totalChunks
+        })), null, 2));
+
+         // Step 2: Embed
+        const embeddedResults = await embedChunkedFiles(chunkedResults);
+
+        embeddedResults.forEach(result => {
+            console.log(`${result.originalName} -> ${result.totalChunks} chunks embedded`);
+        });
+        // ======================================================
+        // Debug: write chunks to a file for inspection
+        // ======================================================
+        const debugDir = "debug_chunks";
+        await fs.mkdir(debugDir, { recursive: true });
+
+        const debugFilePath = path.join(debugDir, `chunks_${Date.now()}.json`);
+        await fs.writeFile(
+            debugFilePath,
+            JSON.stringify(chunkedResults, null, 2)
+        );
+
+        console.log(`📝 Chunks written to: ${debugFilePath}`);
 
         return res.status(200).json({
             success: true,
-            message: "Text extracted successfully.",
+            message: "Text extracted and chunked successfully.",
             totalFiles: processedFiles.length,
-            files: processedFiles
+            files: chunkedResults
         });
 
     } catch (error) {
