@@ -1,0 +1,32 @@
+Amit Sain 
+9610841282
+amit2976297@gmail.com
+
+
+Dear [Hiring Manager's Name],
+
+
+I am writing to express my interest in the MERN Stack Developer position at your esteemed organization. As a recent IT graduate with a strong foundation in full-stack development and a passion for building responsive web applications, I am eager to contribute to your team and grow in a professional environment.
+
+
+During my academic journey, I worked on several projects including an 
+Airbnb Full Stack Clone
+, 
+Zomato UI Clone
+, and a 
+Spotify UI Clone
+, which allowed me to sharpen my skills in MongoDB, Express.js, React.js, and Node.js. These hands-on experiences taught me how to design efficient APIs, build dynamic UIs, and manage databases effectively.
+
+
+In addition to my technical skills, I bring strong leadership and communication abilities. I led a team during a 48-hour inter-college hackathon, where I coordinated tasks, managed development flow, and encouraged collaborative problem-solving. I’ve also held responsibilities as a 
+cultural event coordinator
+, which strengthened my event planning, team management, and organizational skills.
+
+
+I am enthusiastic about applying my knowledge in a real-world setting, learning from experienced professionals, and contributing meaningfully to development projects. I am confident that my blend of technical and interpersonal skills makes me a valuable fit for your team.
+
+
+Thank you for considering my application. I would welcome the opportunity to discuss how I can contribute to your team and look forward to your response.
+
+Sincerely,
+Amit Sain
