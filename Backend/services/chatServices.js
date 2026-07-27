@@ -13,7 +13,7 @@ const getLLM = () => {
     throw new Error("Missing GEMINI_API_KEY environment variable.");
   }
 
-  llm = new ChatGoogleGenerativeAI({ apiKey, model: "gemini-3.5-flash" });
+  llm = new ChatGoogleGenerativeAI({ apiKey, model: "gemini-3.5-flash-lite" });
   return llm;
 };
 

@@ -1,6 +1,7 @@
 import express from "express";
 import fs from "fs/promises";
 import path from "path";
+import multer from "multer"; 
 import { v4 as uuidv4 } from "uuid";
 import { upload } from "../middlewares/uploadMiddleware.js";
 import { extractTextFromFile } from "../services/documentProcessor.js";
