@@ -1,7 +1,9 @@
 import { ChromaClient } from "chromadb";
 
 const client = new ChromaClient({
-  path: "http://localhost:8000",
+  host: process.env.CHROMA_HOST || "localhost",
+  port: Number(process.env.CHROMA_PORT) || 8000,
+  ssl: process.env.CHROMA_SSL === "true", // env vars are always strings, so compare explicitly
 });
 
 export const getCollection = async () => {

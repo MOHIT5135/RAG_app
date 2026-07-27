@@ -1,5 +1,6 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { PromptTemplate } from "@langchain/core/prompts";
+import { resolveDocIds } from "./documentLookupService.js";
 import { retrieveRelevantChunks } from "./reterivalService.js";
 
 let llm = null;
@@ -48,9 +49,11 @@ Question: {question}
 Answer (with inline citations):`
 );
 
-export const answerWithCitations = async (userInput, docId, topK = 5) => {
+export const answerWithCitations = async (userInput, fileName, topK = 5) => {
+  
+  const docIds = await resolveDocIds(fileName); // null = search all, array = scoped
   const standaloneQuestion = await createStandaloneQuestion(userInput);
-  const { chunks, distances, metadatas } = await retrieveRelevantChunks(standaloneQuestion, docId, topK);
+  const { chunks, distances, metadatas } = await retrieveRelevantChunks(standaloneQuestion, docIds, topK);
 
   if (chunks.length === 0) {
     return { standaloneQuestion, answer: "I couldn't find relevant information in this document to answer that.", sources: [] };

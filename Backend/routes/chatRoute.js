@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post("/", async (req, res) => {
   try {
-    const { query, docId } = req.body;
+    const { query, fileName } = req.body;
 
     if (!query || typeof query !== "string") {
       return res.status(400).json({
@@ -14,7 +14,7 @@ router.post("/", async (req, res) => {
       });
     }
 
-    const result = await answerWithCitations(query, docId);
+    const result = await answerWithCitations(query, fileName);
 
     return res.status(200).json({
       success: true,

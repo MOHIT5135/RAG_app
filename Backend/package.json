@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/MOHIT5135/RAG_app#readme",
   "dependencies": {
+    "@chroma-core/default-embed": "^0.1.9",
     "@google/genai": "^2.13.0",
     "@google/generative-ai": "^0.24.1",
     "@langchain/core": "^1.2.3",
