@@ -11,5 +11,9 @@ export const getCollection = async () => {
 
   return collection;
 };
-
+export const checkHeartbeat = async () => {
+    const heartbeat = await client.heartbeat();
+    console.log("✅ Chroma heartbeat:", heartbeat);
+    return heartbeat;
+};
 export default client;

@@ -1,10 +1,12 @@
 import express from "express";
 import fs from "fs/promises";
 import path from "path";
+import { v4 as uuidv4 } from "uuid";
 import { upload } from "../middlewares/uploadMiddleware.js";
 import { extractTextFromFile } from "../services/documentProcessor.js";
 import { chunkFiles } from "../services/chunkService.js";
 import { embedChunkedFiles } from "../services/embeddingService.js";
+import { storeVectors } from "../services/vectorService.js";
 const router = express.Router();
 
 /*
@@ -58,11 +60,6 @@ router.post("/upload", upload.array("documents", 10), async (req, res) => {
             processedFiles.map(f => ({ originalName: f.originalName, extractedText: f.extractedText })),
             { chunkSize: 1000, chunkOverlap: 200 }
         );
-        // TEMP: confirm chunking worked before embedding runs
-        console.log("✅ Chunking result:", JSON.stringify(chunkedResults.map(r => ({
-            file: r.originalName,
-            totalChunks: r.totalChunks
-        })), null, 2));
 
          // Step 2: Embed
         const embeddedResults = await embedChunkedFiles(chunkedResults);
@@ -70,19 +67,14 @@ router.post("/upload", upload.array("documents", 10), async (req, res) => {
         embeddedResults.forEach(result => {
             console.log(`${result.originalName} -> ${result.totalChunks} chunks embedded`);
         });
-        // ======================================================
-        // Debug: write chunks to a file for inspection
-        // ======================================================
-        const debugDir = "debug_chunks";
-        await fs.mkdir(debugDir, { recursive: true });
 
-        const debugFilePath = path.join(debugDir, `chunks_${Date.now()}.json`);
-        await fs.writeFile(
-            debugFilePath,
-            JSON.stringify(chunkedResults, null, 2)
-        );
-
-        console.log(`📝 Chunks written to: ${debugFilePath}`);
+        // Step 3 : Store each file's chunks + embeddings in ChromaDB
+        const docId = uuidv4();
+        for (const file of embeddedResults) {
+            const chunkTexts = file.chunks.map((c) => c.text);
+            const chunkEmbeddings = file.chunks.map((c) => c.embedding);
+            await storeVectors(chunkTexts, chunkEmbeddings, file.originalName, docId);
+        }
 
         return res.status(200).json({
             success: true,

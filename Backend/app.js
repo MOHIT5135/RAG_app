@@ -1,16 +1,16 @@
+import dotenv from 'dotenv';
+dotenv.config(); // must be first, before any other local imports
 import express from 'express';
 import fs from 'fs';
 import cors from 'cors'
-import dotenv from 'dotenv';
 
 import apiRoutes from "./routes/apiRoutes.js";
 import documentRoutes from './routes/documentRoute.js';
 import { connectDB } from './config/db.js';
+import { checkHeartbeat } from './config/chroma.js';
 import { requestLogger } from './middlewares/logger.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 
-// Init environment configurations
-dotenv.config();
 
 if (!process.env.MONGO_URI) {
     throw new Error("MONGO_URI is missing in .env file");
@@ -18,6 +18,7 @@ if (!process.env.MONGO_URI) {
 
 // Establish core database infrastructure connection
 connectDB();
+checkHeartbeat();
 
 const app = express();
 
@@ -46,6 +47,7 @@ app.use("/api", apiRoutes);
 //----------------------------------- Existing Document Routes --------------------------------------------------
 
 app.use('/api/v1/documents', documentRoutes);
+
 
 
 // ----------------------------------------- 404 Handler --------------------------------------------------------
