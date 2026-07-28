@@ -1,49 +1,34 @@
-// Import useEffect hook
-import { useEffect } from "react";
-
-// Import API function
-import { checkBackendConnection } from "./services/testService";
+import Navbar from "@/components/layout/Navbar";
+import Hero from "@/components/landing/Hero";
+import Features from "@/components/landing/Features";
+import HowItWorks from "@/components/landing/HowItWorks";
+import UseCases from "@/components/landing/UseCases";
+import TechStack from "@/components/techStack/TechStack";
+import Developers from "@/components/developers/Developers";
+import Footer from "@/components/footer/Footer";
 
 function App() {
-
-  // Runs once when component mounts
-  useEffect(() => {
-
-    const testConnection = async () => {
-
-      try {
-
-        // Call backend
-        const data = await checkBackendConnection();
-
-        console.log("Backend Response:", data);
-
-      } catch (error) {
-
-        console.log("Unable to connect to backend.");
-
-      }
-
-    };
-
-    testConnection();
-
-  }, []);
-
   return (
+    <>
+      <Navbar />
 
-    <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <main>
+        <Hero />
 
-      <h1 className="text-5xl font-bold text-green-400">
+        <Features />
 
-        RAG App Setup Successful 🚀
+        <HowItWorks />
 
-      </h1>
+        <UseCases />
 
-    </div>
+        <TechStack />
 
+        <Developers />
+      </main>
+
+      <Footer />
+    </>
   );
-
 }
 
 export default App;
