@@ -18,3 +18,16 @@ export const resolveDocIds = async (fileName) => {
 
   return matches.map((doc) => doc.docId);
 };
+
+// - resolves fileName -> total chunk count relevant to this query's scope.
+// - Single file: that file's totalChunks
+// - "all"/omitted: sum of totalChunks across every uploaded document
+export const resolveTotalChunks = async (fileName) => {
+  if (!fileName || fileName.toLowerCase() === "all") {
+    const allDocs = await Document.find();
+    return allDocs.reduce((sum, doc) => sum + doc.totalChunks, 0);
+  }
+
+  const matches = await Document.find({ fileName });
+  return matches.reduce((sum, doc) => sum + doc.totalChunks, 0);
+};
