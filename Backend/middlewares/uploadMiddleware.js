@@ -30,15 +30,19 @@ const fileFilter = (req, file, cb) => {
         ".pdf",
         ".docx",
         ".doc",
-        ".txt"
+        ".txt",
+        ".pptx",
+        ".xlsx"
     ];
 
     // Allowed MIME types
     const allowedMimeTypes = [
-        "application/pdf",
+        "application/pdf", 
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "application/msword",
-        "text/plain"
+        "text/plain",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     ];
 
     const extension = path.extname(file.originalname).toLowerCase();

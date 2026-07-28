@@ -1,12 +1,14 @@
 import express from "express";
 import fs from "fs/promises";
 import path from "path";
+import multer from "multer"; 
 import { v4 as uuidv4 } from "uuid";
 import { upload } from "../middlewares/uploadMiddleware.js";
 import { extractTextFromFile } from "../services/documentProcessor.js";
 import { chunkFiles } from "../services/chunkService.js";
 import { embedChunkedFiles } from "../services/embeddingService.js";
 import { storeVectors } from "../services/vectorService.js";
+import Document from "../models/Document.js";
 const router = express.Router();
 
 /*
@@ -63,24 +65,32 @@ router.post("/upload", upload.array("documents", 10), async (req, res) => {
 
          // Step 2: Embed
         const embeddedResults = await embedChunkedFiles(chunkedResults);
+    
+        // Step 3 : Store vectors + create a MongoDB record PER FILE
+        // (each file gets its own docId, since each is independently searchable)
+        const uploadedDocs = [];
 
-        embeddedResults.forEach(result => {
-            console.log(`${result.originalName} -> ${result.totalChunks} chunks embedded`);
-        });
-
-        // Step 3 : Store each file's chunks + embeddings in ChromaDB
-        const docId = uuidv4();
         for (const file of embeddedResults) {
+            const docId = uuidv4();
             const chunkTexts = file.chunks.map((c) => c.text);
             const chunkEmbeddings = file.chunks.map((c) => c.embedding);
+
             await storeVectors(chunkTexts, chunkEmbeddings, file.originalName, docId);
+
+            const savedDoc = await Document.create({
+                docId,
+                fileName: file.originalName,
+                totalChunks: file.totalChunks,
+            });
+
+            uploadedDocs.push(savedDoc);
         }
 
         return res.status(200).json({
             success: true,
             message: "Text extracted and chunked successfully.",
             totalFiles: processedFiles.length,
-            files: chunkedResults
+            documents : uploadedDocs,
         });
 
     } catch (error) {

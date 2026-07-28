@@ -1,33 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
 
-/**
- * ============================================================
- * Embedding Service (Gemini -- direct SDK)
- *
- * NOTE: This uses Google's `@google/genai` SDK directly, NOT
- * LangChain's `@langchain/google-genai` wrapper. Why the switch:
- * LangChain's `GoogleGenerativeAIEmbeddings` class is built on
- * an older Google SDK path that silently IGNORES the
- * `outputDimensionality` option -- it always returns the full
- * 3072-dim vector no matter what you pass in, with no error.
- * The direct SDK supports it properly, so we use that here for
- * the embedding step specifically. (LangChain's text splitter
- * is unaffected by this and works fine -- keep using that.)
- *
- * Model facts you should know:
- *  - Model: gemini-embedding-001
- *  - Default output: 3072 dimensions. Truncating to 1536 or 768
- *    via `outputDimensionality` costs very little quality
- *    (Matryoshka Representation Learning).
- *  - Max input: 2048 tokens per text -- your 1000-char chunks
- *    are safely within that.
- *  - Free tier available; paid tier is $0.15 / 1M input tokens.
- *  - Use a different task_type for documents vs. queries:
- *    RETRIEVAL_DOCUMENT -> when embedding chunks to store
- *    RETRIEVAL_QUERY     -> when embedding the user's question
- * ============================================================
- */
-
 const EMBEDDING_MODEL = "gemini-embedding-001";
 
 // 768 is a good default: ~25% of the storage of the full 3072-dim
@@ -39,8 +11,27 @@ const DEFAULT_DIMENSIONS = 768;
 // per request; chunk large arrays to stay safely under that limit.
 const BATCH_SIZE = 100;
 
-let client = null;
+// Retries an embedding call with exponential backoff if rate-limited.
+const embedWithRetry = async (fn, maxRetries = 3) => {
+  let attempt = 0;
+  while (attempt <= maxRetries) {
+    try {
+      return await fn();
+    } catch (err) {
+      const isRateLimit = err?.status === 429 || err?.message?.includes("RESOURCE_EXHAUSTED");
+      if (isRateLimit && attempt < maxRetries) {
+        const waitMs = 20000 * Math.pow(2, attempt); // 20s, 40s, 80s — spans a full RPM window
+        console.warn(`Rate limited. Retrying in ${waitMs / 1000}s (attempt ${attempt + 1}/${maxRetries})...`);
+        await new Promise((resolve) => setTimeout(resolve, waitMs));
+        attempt++;
+      } else {
+        throw err;
+      }
+    }
+  }
+};
 
+let client = null;
 const getClient = () => {
     if (client) return client;
 
@@ -80,26 +71,22 @@ export const embedDocuments = async (texts, options = {}) => {
 
     const ai = getClient();
     const dimensions = options.dimensions ?? DEFAULT_DIMENSIONS;
-
     const batches = chunkArray(texts, BATCH_SIZE);
     const allEmbeddings = [];
 
     for (const batch of batches) {
-        const response = await ai.models.embedContent({
-            model: EMBEDDING_MODEL,
-            contents: batch,
-            config: {
-                taskType: "RETRIEVAL_DOCUMENT",
-                outputDimensionality: dimensions
-            }
-        });
-
+        const response = await embedWithRetry(() =>
+            ai.models.embedContent({
+                model: EMBEDDING_MODEL,
+                contents: batch,
+                config: { taskType: "RETRIEVAL_DOCUMENT", outputDimensionality: dimensions },
+            })
+        );
         allEmbeddings.push(...response.embeddings.map((e) => e.values));
     }
 
     return allEmbeddings;
-};
-
+}
 /**
  * Embed a single user query string.
  * Use this at search time, NOT when storing chunks -- the task
@@ -120,14 +107,13 @@ export const embedQuery = async (query, options = {}) => {
     const ai = getClient();
     const dimensions = options.dimensions ?? DEFAULT_DIMENSIONS;
 
-    const response = await ai.models.embedContent({
-        model: EMBEDDING_MODEL,
-        contents: [query],
-        config: {
-            taskType: "RETRIEVAL_QUERY",
-            outputDimensionality: dimensions
-        }
-    });
+     const response = await embedWithRetry(() =>
+        ai.models.embedContent({
+            model: EMBEDDING_MODEL,
+            contents: [query],
+            config: { taskType: "RETRIEVAL_QUERY", outputDimensionality: dimensions },
+        })
+    );
 
     return response.embeddings[0].values;
 };

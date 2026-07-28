@@ -5,7 +5,7 @@ import fs from 'fs';
 import cors from 'cors'
 
 import apiRoutes from "./routes/apiRoutes.js";
-import documentRoutes from './routes/documentRoute.js';
+import chromaCollection from './chromaCollection.js';
 import { connectDB } from './config/db.js';
 import { checkHeartbeat } from './config/chroma.js';
 import { requestLogger } from './middlewares/logger.js';
@@ -44,11 +44,8 @@ if (!fs.existsSync('uploads')) {
 // Register all API routes
 app.use("/api", apiRoutes);
 
-//----------------------------------- Existing Document Routes --------------------------------------------------
-
-app.use('/api/v1/documents', documentRoutes);
-
-
+// ---------------------------------------------- get chromaDB all collection route (temp) ---------------------------------
+app.use("/all-documents", chromaCollection);
 
 // ----------------------------------------- 404 Handler --------------------------------------------------------
 

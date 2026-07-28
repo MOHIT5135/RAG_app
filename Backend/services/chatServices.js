@@ -1,5 +1,6 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { PromptTemplate } from "@langchain/core/prompts";
+import { resolveDocIds, resolveTotalChunks } from "./documentLookupService.js";
 import { retrieveRelevantChunks } from "./reterivalService.js";
 
 let llm = null;
@@ -12,7 +13,7 @@ const getLLM = () => {
     throw new Error("Missing GEMINI_API_KEY environment variable.");
   }
 
-  llm = new ChatGoogleGenerativeAI({ apiKey, model: "gemini-3.5-flash" });
+  llm = new ChatGoogleGenerativeAI({ apiKey, model: "gemini-3.5-flash-lite" });
   return llm;
 };
 
@@ -39,18 +40,36 @@ Rules:
 - Answer using only the given context. If the answer isn't in it, say so clearly.
 - Cite the source number(s) inline right after the relevant statement, e.g. "...uses MongoDB [1]."
 - Do not invent sources or facts not present in the context.
+- Match your tone to the user's original message below — if they express nervousness, confusion, excitement, or urgency, acknowledge it briefly and respond with appropriate warmth, without inventing facts to comfort them.
 
 Context:
 {context}
 
-Question: {question}
+User's original message (for tone only, not for facts): {originalMessage}
+Standalone question (for accuracy): {question}
 
 Answer (with inline citations):`
 );
 
-export const answerWithCitations = async (userInput, docId, topK = 5) => {
+// Scales topK based on how many chunks exist in the search scope.
+// Capped to avoid blowing up context size, cost, and latency.
+const getAdaptiveTopK = (totalChunks) => {
+  if (totalChunks <= 10) return 5;
+  if (totalChunks <= 30) return 8;
+  if (totalChunks <= 60) return 12;
+  if (totalChunks <= 150) return 18;
+  return 25; // hard cap regardless of how large the document/corpus gets
+};
+export const answerWithCitations = async (userInput, fileName) => {
+  
+  const docIds = await resolveDocIds(fileName); // null = search all, array = scoped
+  
+  const totalChunks = await resolveTotalChunks(fileName);
+  const topK = getAdaptiveTopK(totalChunks);
+
+  // Used ONLY for embedding + retrieval — stays clean and precise
   const standaloneQuestion = await createStandaloneQuestion(userInput);
-  const { chunks, distances, metadatas } = await retrieveRelevantChunks(standaloneQuestion, docId, topK);
+  const { chunks, distances, metadatas } = await retrieveRelevantChunks(standaloneQuestion, docIds, topK);
 
   if (chunks.length === 0) {
     return { standaloneQuestion, answer: "I couldn't find relevant information in this document to answer that.", sources: [] };
@@ -65,8 +84,13 @@ export const answerWithCitations = async (userInput, docId, topK = 5) => {
     distance: distances[i],
   }));
 
+  // Pass the ORIGINAL user input here too — not just the sanitized standalone question
   const chain = answerTemplate.pipe(getLLM());
-  const response = await chain.invoke({ context, question: standaloneQuestion });
+  const response = await chain.invoke({
+    context,
+    question: standaloneQuestion,
+    originalMessage: userInput,
+  });
 
-  return { standaloneQuestion, answer: response.content, sources };
+  return { standaloneQuestion, answer: response.content, sources, topKUsed : topK };
 };
