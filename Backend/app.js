@@ -35,8 +35,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
 
 // Automatically generate target storage directory if missing locally
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
+if (!fs.existsSync('uploads/documents')) {
+  fs.mkdirSync('uploads/documents', { recursive: true });
 }
 
 //------------------------------------------ API ROUTES --------------------------------------------------------

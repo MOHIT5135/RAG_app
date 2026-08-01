@@ -15,8 +15,8 @@ import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
  * ============================================================
  */
 
-const DEFAULT_CHUNK_SIZE = 1000;   // characters per chunk
-const DEFAULT_CHUNK_OVERLAP = 200; // characters shared between consecutive chunks
+const DEFAULT_CHUNK_SIZE = 1200;   // characters per chunk
+const DEFAULT_CHUNK_OVERLAP = 150; // characters shared between consecutive chunks
 
 /**
  * Public API: chunkText
