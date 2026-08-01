@@ -1,6 +1,6 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { PromptTemplate } from "@langchain/core/prompts";
-import { resolveDocIds, resolveTotalChunks } from "./documentLookupService.js";
+import { resolveDocIds, resolveTotalChunks, findMatchingDocumentFromQuery } from "./documentLookupService.js";
 import { retrieveRelevantChunks } from "./reterivalService.js";
 
 let llm = null;
@@ -61,6 +61,22 @@ const getAdaptiveTopK = (totalChunks) => {
   return 25; // hard cap regardless of how large the document/corpus gets
 };
 export const answerWithCitations = async (userInput, fileName) => {
+
+  // If frontend didn't specify a document,
+  // try to detect one from the user's question.
+  let resolvedFileName = fileName;
+
+  if (!resolvedFileName) {
+    resolvedFileName =
+      await findMatchingDocumentFromQuery(userInput);
+
+    if (resolvedFileName) {
+      console.log(
+        "📄 Detected document:",
+        resolvedFileName
+      );
+    }
+  }
   
   const docIds = await resolveDocIds(fileName); // null = search all, array = scoped
   

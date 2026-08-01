@@ -1,12 +1,21 @@
 import multer from "multer";
 import path from "path";
+import fs from "fs";
+
+// Upload directory
+const uploadDirectory = path.join("uploads", "documents");
+
+// Create the directory automatically if it doesn't exist
+if (!fs.existsSync(uploadDirectory)) {
+    fs.mkdirSync(uploadDirectory, { recursive: true });
+}
 
 // Configure how uploaded files are stored
 const storage = multer.diskStorage({
 
     // Folder where uploaded documents will be stored
     destination: (req, file, cb) => {
-        cb(null, "uploads/documents/");
+        cb(null, uploadDirectory);
     },
 
     // Generate a unique filename to prevent overwriting
