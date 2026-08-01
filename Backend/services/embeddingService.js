@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { waitForCapacity, recordRequest } from "./rateLimiter.js";
 
 const EMBEDDING_MODEL = "gemini-embedding-001";
 
@@ -9,7 +10,33 @@ const DEFAULT_DIMENSIONS = 768;
 
 // Gemini's batch embed endpoint accepts a limited number of texts
 // per request; chunk large arrays to stay safely under that limit.
-const BATCH_SIZE = 100;
+const BATCH_SIZE = 40;
+
+// Retries an embedding call with exponential backoff if rate-limited.
+/**
+ * Extracts the exact retryDelay Gemini's API suggests, if present.
+ * Falls back to exponential backoff only when the API doesn't provide one.
+ */
+const extractRetryDelayMs = (err) => {
+  try {
+    // The SDK sometimes exposes structured error details directly
+    const details = err?.errorDetails || err?.error?.details;
+    if (Array.isArray(details)) {
+      const retryInfo = details.find((d) => d["@type"]?.includes("RetryInfo"));
+      if (retryInfo?.retryDelay) {
+        const seconds = parseFloat(retryInfo.retryDelay.replace("s", ""));
+        if (!isNaN(seconds)) return Math.ceil(seconds * 1000);
+      }
+    }
+
+    // Fallback: parse it out of a raw JSON string embedded in err.message
+    const match = err?.message?.match(/"retryDelay":"(\d+(?:\.\d+)?)s"/);
+    if (match) return Math.ceil(parseFloat(match[1]) * 1000);
+  } catch {
+    // fall through to exponential backoff below
+  }
+  return null;
+};
 
 // Retries an embedding call with exponential backoff if rate-limited.
 const embedWithRetry = async (fn, maxRetries = 3) => {
@@ -20,9 +47,13 @@ const embedWithRetry = async (fn, maxRetries = 3) => {
     } catch (err) {
       const isRateLimit = err?.status === 429 || err?.message?.includes("RESOURCE_EXHAUSTED");
       if (isRateLimit && attempt < maxRetries) {
-        const waitMs = 20000 * Math.pow(2, attempt); // 20s, 40s, 80s — spans a full RPM window
-        console.warn(`Rate limited. Retrying in ${waitMs / 1000}s (attempt ${attempt + 1}/${maxRetries})...`);
-        await new Promise((resolve) => setTimeout(resolve, waitMs));
+        const apiSuggestedMs = extractRetryDelayMs(err);
+        // Prefer the API's exact suggested wait; only guess if it didn't provide one.
+        const waitMs = apiSuggestedMs ?? (5000 * Math.pow(2, attempt));
+        const source = apiSuggestedMs ? "API-suggested" : "fallback exponential";
+
+        console.warn(`Rate limited. Waiting ${(waitMs / 1000).toFixed(1)}s (${source}, attempt ${attempt + 1}/${maxRetries})...`);
+        await new Promise((resolve) => setTimeout(resolve, waitMs + 250)); // +250ms safety margin only, not padding
         attempt++;
       } else {
         throw err;
@@ -74,7 +105,14 @@ export const embedDocuments = async (texts, options = {}) => {
     const batches = chunkArray(texts, BATCH_SIZE);
     const allEmbeddings = [];
 
-    for (const batch of batches) {
+    for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i];
+        const estimatedTokens = Math.ceil(batch.join(" ").length / 4);
+
+        await waitForCapacity(estimatedTokens);
+
+        console.log(`Sending batch ${i + 1}/${batches.length} (${batch.length} texts, ~${estimatedTokens} tokens)`);
+
         const response = await embedWithRetry(() =>
             ai.models.embedContent({
                 model: EMBEDDING_MODEL,
@@ -82,6 +120,9 @@ export const embedDocuments = async (texts, options = {}) => {
                 config: { taskType: "RETRIEVAL_DOCUMENT", outputDimensionality: dimensions },
             })
         );
+
+        recordRequest(estimatedTokens);
+        console.log(`Received ${response.embeddings.length} embeddings`);
         allEmbeddings.push(...response.embeddings.map((e) => e.values));
     }
 
