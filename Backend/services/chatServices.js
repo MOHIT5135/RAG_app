@@ -1,6 +1,6 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { PromptTemplate } from "@langchain/core/prompts";
-import { resolveDocIds, resolveTotalChunks, findMatchingDocumentFromQuery } from "./documentLookupService.js";
+import { resolveDocIds, resolveTotalChunks } from "./documentLookupService.js";
 import { retrieveRelevantChunks } from "./reterivalService.js";
 
 let llm = null;
