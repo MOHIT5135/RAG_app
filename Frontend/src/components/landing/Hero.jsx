@@ -10,7 +10,7 @@ export default function Hero() {
 
         <div className="absolute left-20 top-20 h-96 w-96 rounded-full bg-violet-600/10 blur-[140px]" />
 
-        <div className="absolute right-10 bottom-0 h-[28rem] w-[28rem] rounded-full bg-cyan-500/10 blur-[170px]" />
+        <div className="absolute right-10 bottom-0 h-112 w-md rounded-full bg-cyan-500/10 blur-[170px]" />
 
       </div>
 
@@ -42,7 +42,7 @@ export default function Hero() {
               Chatbots
               <br />
 
-              <span className="bg-gradient-to-r from-violet-500 via-blue-500 to-cyan-400 bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-violet-500 via-blue-500 to-cyan-400 bg-clip-text text-transparent">
 
                 Powered by
 
@@ -68,16 +68,20 @@ export default function Hero() {
 
             <div className="mt-10 flex flex-wrap gap-4">
 
-              <Button
-                size="lg"
-                className="rounded-xl px-8 py-6 text-base font-semibold shadow-lg transition-all hover:-translate-y-1"
+              <button
+                onClick={() =>
+                  document
+                    .getElementById("upload")
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }
+                className="group inline-flex items-center justify-center gap-3 rounded-xl bg-white px-8 py-4 text-lg font-semibold uppercase tracking-wider text-black transition-all duration-300 hover:-translate-y-1 hover:bg-zinc-200 hover:shadow-2xl"
               >
+                START CHATTING
 
-                Start Chatting
-
-                <ArrowRight className="ml-2 h-5 w-5" />
-
-              </Button>
+                <span className="transition-transform duration-300 group-hover:translate-x-1">
+                  →
+                </span>
+              </button>
 
               <Button
                 variant="outline"
@@ -130,7 +134,7 @@ export default function Hero() {
             <div
               className="
                 relative
-                h-[500px]
+                h-125
                 w-full
                 overflow-hidden
                 rounded-3xl

@@ -1,11 +1,13 @@
 // Import axios to make HTTP requests
 import axios from "axios";
 
+console.log(import.meta.env.VITE_API_BASE_URL);
+
 // Create a reusable axios instance
 const api = axios.create({
 
   // Base URL is read from the .env file
-  // Example: http://localhost:5000/api
+  // Example: http://localhost:8080/api
   baseURL: import.meta.env.VITE_API_BASE_URL,
 
   // Allows cookies to be sent with requests

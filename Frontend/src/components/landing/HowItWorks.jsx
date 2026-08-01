@@ -86,7 +86,7 @@ export default function HowItWorks() {
 
           {/* Vertical Line */}
 
-          <div className="absolute left-7 top-0 h-full w-[2px] bg-border" />
+          <div className="absolute left-7 top-0 h-full w-0.5 bg-border" />
 
           {steps.map((step, index) => {
             const Icon = step.icon;
