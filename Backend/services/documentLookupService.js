@@ -22,34 +22,77 @@ export const resolveDocIds = async (fileName) => {
 };
 
 /**
- * Automatically detect a document mentioned in the user's question.
+ * Try to detect which uploaded document the user is referring to.
  *
- * Example:
- * Documents:
- *  Resume.pdf
- *  Hritik_Biodata.pdf
- *
- * User:
- *  "What is the phone number in Hritik_Biodata?"
- *
- * Returns:
- *  "Hritik_Biodata.pdf"
+ * Works with:
+ * Resume
+ * resume.pdf
+ * Amit Resume
+ * Hritik
+ * Hritik Biodata
+ * Loan Report
+ * etc.
  */
 export const findMatchingDocumentFromQuery = async (query) => {
   if (!query) return null;
 
   const documents = await Document.find();
 
-  const normalizedQuery = query.toLowerCase();
+  // Normalize the user's question
+  const normalizedQuery = query
+    .toLowerCase()
+    .replace(/[^\w\s]/g, " ")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  let bestMatch = null;
+  let bestScore = 0;
 
   for (const document of documents) {
-    const fileNameWithoutExtension = document.fileName
-      .replace(/\.[^/.]+$/, "")
-      .toLowerCase();
 
-    if (normalizedQuery.includes(fileNameWithoutExtension)) {
-      return document.fileName;
+    // Remove extension
+    const fileName = document.fileName.replace(/\.[^/.]+$/, "");
+
+    // Normalize filename
+    const normalizedFileName = fileName
+      .toLowerCase()
+      .replace(/[^\w\s]/g, " ")
+      .replace(/_/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const words = normalizedFileName.split(" ");
+
+    let score = 0;
+
+    // Count how many filename words appear in the query
+    for (const word of words) {
+      if (word.length < 3) continue;
+
+      if (normalizedQuery.includes(word)) {
+        score++;
+      }
     }
+
+    // Bonus for full filename match
+    if (
+      normalizedQuery.includes(normalizedFileName) ||
+      normalizedFileName.includes(normalizedQuery)
+    ) {
+      score += 5;
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = document.fileName;
+    }
+  }
+
+  // Require at least one meaningful match
+  if (bestScore > 0) {
+    console.log("Detected Document:", bestMatch);
+    return bestMatch;
   }
 
   return null;
