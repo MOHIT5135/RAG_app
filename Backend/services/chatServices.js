@@ -13,7 +13,7 @@ const getLLM = () => {
     throw new Error("Missing GEMINI_API_KEY environment variable.");
   }
 
-  llm = new ChatGoogleGenerativeAI({ apiKey, model: "gemini-3.5-flash" });
+  llm = new ChatGoogleGenerativeAI({ apiKey, model: "gemini-3.5-flash-lite" });
   return llm;
 };
 
@@ -34,15 +34,23 @@ export const createStandaloneQuestion = async (userInput) => {
 
 const answerTemplate = PromptTemplate.fromTemplate(
   `You are a helpful assistant answering questions using ONLY the context below.
-Each context chunk is labeled with its source file name in brackets, like [filename.pdf].
 
 Format your answer like a professional reference document, not a single paragraph:
 - Use short markdown headers (###) to break the answer into logical sections when the question has multiple parts.
 - Use **bold labels** for key terms, categories, or sub-points within a section.
 - Use bullet points for lists rather than long prose sentences.
-- Cite the source file inline immediately after each claim, in the format [filename], using the exact file name from the context labels. If multiple chunks from the same file support one claim, cite it once.
-- If part of the question cannot be answered from the context, add a "### Missing Information" section at the end explicitly stating what wasn't covered, rather than guessing.
-- End with a "### Sources" section listing every distinct file name cited above, each on its own line.
+- If part of the question cannot be answered from the context, add a final section titled "Missing Information" (use markdown text, use **bold labels**) stating what wasn't covered.
+- End with a final section titled "Sources", use markdown text. List every distinct file name cited above, each as a bullet point.
+
+Formatting Rules:
+1. Organize the answer into numbered sections whenever there are multiple categories.
+2. Use Markdown H2 headings (##) only for the main content sections.
+3. Do NOT use Markdown H3 headings (###) anywhere.
+4. "Missing Information" and "Sources" must be plain text titles without # symbols.
+5. Use bullet lists for items.
+6. If a bullet contains multiple related items, use nested bullets.
+7. Highlight labels such as Phone Number, Email Address, and Current Location in bold.
+8. Never return plain paragraphs when structured information is available.
 
 Rules:
 - Answer using only the given context. If the answer isn't in it, say so clearly in the Missing Information section.
