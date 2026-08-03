@@ -6,13 +6,24 @@ import App from "./App";
 import "./index.css";
 
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { AuthProvider } from "@/context/AuthContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
+
     <BrowserRouter>
+
       <ThemeProvider>
-        <App />
+
+        <AuthProvider>
+
+          <App />
+
+        </AuthProvider>
+
       </ThemeProvider>
+
     </BrowserRouter>
+
   </React.StrictMode>
 );

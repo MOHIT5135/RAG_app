@@ -1,12 +1,14 @@
 import { Bot, User } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 const ChatMessage = ({ message }) => {
   const isUser = message.role === "user";
 
-  // Remove inline citation markers like [1], [2], [1,2]
   const formattedMessage = isUser
     ? message.content
-    : message.content.replace(/\[(\d+(?:,\s*\d+)*)\]/g, "").trim();
+    : message.content
+        .replace(/\[(\d+(?:,\s*\d+)*)\]/g, "")
+        .trim();
 
   return (
     <div
@@ -44,7 +46,7 @@ const ChatMessage = ({ message }) => {
         >
           {/* Sender */}
           <p
-            className={`mb-1 text-[11px] font-semibold uppercase tracking-wide ${
+            className={`mb-2 text-[11px] font-semibold uppercase tracking-wide ${
               isUser
                 ? "text-violet-100"
                 : "text-violet-400"
@@ -54,9 +56,28 @@ const ChatMessage = ({ message }) => {
           </p>
 
           {/* Message */}
-          <p className="whitespace-pre-wrap break-words text-[15px] leading-7">
-            {formattedMessage}
-          </p>
+          {isUser ? (
+            <p className="whitespace-pre-wrap break-words text-[15px] leading-7">
+              {formattedMessage}
+            </p>
+          ) : (
+            <div className="prose prose-invert max-w-none text-[15px] leading-7">
+              <ReactMarkdown
+                components={{
+                  ul: ({ children }) => (
+                    <ul style={{ paddingLeft: "20px", listStyleType: "disc" }}>
+                      {children}
+                    </ul>
+                  ),
+                  li: ({ children }) => (
+                    <li style={{ marginBottom: "6px" }}>{children}</li>
+                  ),
+                }}
+              >
+                {formattedMessage}
+              </ReactMarkdown>
+            </div>
+          )}
 
           {/* Time */}
           {message.timestamp && (
