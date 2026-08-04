@@ -3,9 +3,21 @@ import { answerWithCitations } from "../services/chatServices.js";
 
 const router = express.Router();
 
+/**
+ * ==========================================================
+ * Ask Question
+ * ==========================================================
+ */
+
 router.post("/", async (req, res) => {
+
   try {
-    const { query, fileName } = req.body;
+
+    const {
+      query,
+      documentId,
+      totalChunks,
+    } = req.body;
 
     if (!query || typeof query !== "string") {
       return res.status(400).json({
@@ -14,7 +26,11 @@ router.post("/", async (req, res) => {
       });
     }
 
-    const result = await answerWithCitations(query, fileName);
+    const result = await answerWithCitations(
+      query,
+      documentId,
+      totalChunks
+    );
 
     return res.status(200).json({
       success: true,
@@ -22,8 +38,14 @@ router.post("/", async (req, res) => {
     });
 
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+
   }
+
 });
 
 export default router;

@@ -9,6 +9,8 @@ import { chunkFiles } from "../services/chunkService.js";
 import { embedChunkedFiles } from "../services/embeddingService.js";
 import { storeVectors } from "../services/vectorService.js";
 import Document from "../models/Document.js";
+import { authenticateUser } from "../middlewares/authMiddleware.js";
+import { deleteDocumentVectors } from "../config/chroma.js";
 const router = express.Router();
 
 /*
@@ -27,7 +29,11 @@ const router = express.Router();
  * Upload Documents
  * ======================================================
  */
-router.post("/upload", upload.array("documents", 10), async (req, res) => {
+router.post(
+  "/upload",
+  authenticateUser,
+  upload.array("documents", 10),
+  async (req, res) => {
 
     try {
 
@@ -78,6 +84,7 @@ router.post("/upload", upload.array("documents", 10), async (req, res) => {
             await storeVectors(chunkTexts, chunkEmbeddings, file.originalName, docId);
 
             const savedDoc = await Document.create({
+                userId: req.user._id,
                 docId,
                 fileName: file.originalName,
                 totalChunks: file.totalChunks,
@@ -103,6 +110,93 @@ router.post("/upload", upload.array("documents", 10), async (req, res) => {
     }
 
 });
+
+/**
+ * ======================================================
+ * Get Logged-in User Documents
+ * ======================================================
+ * Returns all documents uploaded by the authenticated user.
+ */
+router.get("/", authenticateUser, async (req, res) => {
+
+    try {
+
+        const documents = await Document.find({
+            userId: req.user._id
+        })
+        .select("docId fileName totalChunks uploadedAt")
+        .sort({ uploadedAt: -1 });
+
+        return res.status(200).json({
+            success: true,
+            totalDocuments: documents.length,
+            documents,
+        });
+
+    } catch (error) {
+
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+
+    }
+
+});
+
+/**
+ * ======================================================
+ * Delete Document
+ * ======================================================
+ */
+
+router.delete(
+  "/:docId",
+  authenticateUser,
+  async (req, res) => {
+
+    try {
+
+      const { docId } = req.params;
+
+      const document = await Document.findOne({
+        docId,
+        userId: req.user._id,
+      });
+
+      if (!document) {
+
+        return res.status(404).json({
+          success: false,
+          message: "Document not found.",
+        });
+
+      }
+
+      // Delete vectors from Chroma
+      await deleteDocumentVectors(docId);
+
+      // Delete Mongo document
+      await Document.deleteOne({
+        docId,
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Document deleted successfully.",
+      });
+
+    } catch (error) {
+
+      return res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+
+    }
+
+  }
+);
 
 
 /**

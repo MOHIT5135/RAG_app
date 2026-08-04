@@ -13,6 +13,25 @@ export const getCollection = async () => {
 
   return collection;
 };
+
+/**
+ * ======================================================
+ * Delete all embeddings of one document
+ * ======================================================
+ */
+
+export const deleteDocumentVectors = async (docId) => {
+
+  const collection = await getCollection();
+
+  await collection.delete({
+    where: {
+      docId,
+    },
+  });
+
+};
+
 export const checkHeartbeat = async () => {
     const heartbeat = await client.heartbeat();
     console.log("✅ Chroma heartbeat:", heartbeat);
