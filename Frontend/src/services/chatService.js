@@ -10,15 +10,27 @@ const api = axios.create({
   },
 });
 
-export const askQuestion = async (query, fileName = null) => {
+export const askQuestion = async (
+  query,
+  documentId,
+  totalChunks
+) => {
+
   try {
-    const response = await api.post(chatConfig.askEndpoint, {
-      query,
-      fileName,
-    });
+
+    const response = await api.post(
+      chatConfig.askEndpoint,
+      {
+        query,
+        documentId,
+        totalChunks,
+      }
+    );
 
     return response.data;
+
   } catch (error) {
+
     console.error("Chat Service Error:", error);
 
     throw (
@@ -27,5 +39,7 @@ export const askQuestion = async (query, fileName = null) => {
         message: "Something went wrong.",
       }
     );
+
   }
+
 };

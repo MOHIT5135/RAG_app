@@ -1,19 +1,16 @@
-import { useLocation } from "react-router-dom";
-
 import ChatSection from "../components/chat/ChatSection";
 import useChat from "../hooks/useChat";
 
+import { useDocuments } from "@/context/DocumentContext";
+
 const ChatPage = () => {
-  const { state } = useLocation();
 
-  const uploadedDocuments = state?.uploadedDocuments || [];
-
-  // Temporary: use the first uploaded document.
-  // Later we'll support multiple documents.
-  const selectedFile =
-    uploadedDocuments.length > 0
-      ? uploadedDocuments[0].fileName
-      : null;
+  const {
+    documents,
+    loading,
+    activeDocument,
+    setActiveDocument,
+  } = useDocuments();
 
   const {
     messages,
@@ -22,11 +19,23 @@ const ChatPage = () => {
     error,
     sendMessage,
     clearChat,
-  } = useChat(selectedFile);
+  } = useChat(activeDocument);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-zinc-950">
+        <p className="text-zinc-400">
+          Loading your documents...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <ChatSection
-      uploadedDocuments={uploadedDocuments}
+      uploadedDocuments={documents}
+      activeDocument={activeDocument}
+      setActiveDocument={setActiveDocument}
       messages={messages}
       sources={sources}
       isTyping={isTyping}

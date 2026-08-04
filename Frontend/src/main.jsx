@@ -7,6 +7,7 @@ import "./index.css";
 
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/context/AuthContext";
+import { DocumentProvider } from "@/context/DocumentContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -17,7 +18,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(
 
         <AuthProvider>
 
-          <App />
+          <DocumentProvider>
+
+            <App />
+
+          </DocumentProvider>
 
         </AuthProvider>
 

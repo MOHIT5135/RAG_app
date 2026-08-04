@@ -1,5 +1,4 @@
-import { Routes, Route, useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { Routes, Route, } from "react-router-dom";
 
 import Navbar from "@/components/layout/Navbar";
 import Hero from "@/components/landing/Hero";
@@ -9,7 +8,6 @@ import UseCases from "@/components/landing/UseCases";
 import TechStack from "@/components/techStack/TechStack";
 import Developers from "@/components/developers/Developers";
 import Footer from "@/components/footer/Footer";
-import UploadSection from "@/components/upload/UploadSection";
 
 import ChatPage from "@/pages/ChatPage";
 import LoginPage from "@/pages/LoginPage";
@@ -25,24 +23,6 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 function HomePage() {
 
-  const location = useLocation();
-
-  useEffect(() => {
-
-    if (location.state?.scrollToUpload) {
-
-      document
-        .getElementById("upload")
-        ?.scrollIntoView({
-          behavior: "smooth",
-        });
-
-      window.history.replaceState({}, document.title);
-
-    }
-
-  }, [location]);
-
   return (
 
     <>
@@ -52,18 +32,11 @@ function HomePage() {
       <main>
 
         <Hero />
-
         <Features />
-
         <HowItWorks />
-
         <UseCases />
-
         <TechStack />
-
         <Developers />
-
-        <UploadSection />
 
       </main>
 

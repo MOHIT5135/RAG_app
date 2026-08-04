@@ -3,12 +3,13 @@ import { useState } from "react";
 import { validateFile } from "@/utils/fileValidation";
 import { uploadDocuments } from "@/services/uploadService";
 import { uploadConfig } from "@/data/uploadConfig";
+import { useDocuments } from "@/context/DocumentContext";
 
 export const useFileUpload = () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
-  const [uploadedDocuments, setUploadedDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const {documents, addDocuments, } = useDocuments();
 
   // Handle File Selection
   const handleFileSelection = (files) => {
@@ -82,11 +83,8 @@ export const useFileUpload = () => {
 
       const response = await uploadDocuments(selectedFiles);
 
-      // Append newly uploaded documents
-      setUploadedDocuments((prevDocuments) => [
-        ...prevDocuments,
-        ...response.documents,
-      ]);
+      // Update global document state
+      addDocuments(response.documents);
 
       clearFiles();
 
@@ -105,7 +103,7 @@ export const useFileUpload = () => {
 
   return {
     selectedFiles,
-    uploadedDocuments,
+    uploadedDocuments: documents,
     loading,
     error,
 

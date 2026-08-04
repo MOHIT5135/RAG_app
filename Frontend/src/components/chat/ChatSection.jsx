@@ -5,9 +5,12 @@ import ChatSidebar from "./ChatSidebar";
 import ChatMessages from "./ChatMessages";
 import ChatInput from "./ChatInput";
 import SourceReferences from "./SourceReferences";
+import ChatUploadModal from "./ChatUploadModal";
 
 const ChatSection = ({
   uploadedDocuments,
+  activeDocument,
+  setActiveDocument,
   messages,
   sources,
   isTyping,
@@ -19,18 +22,29 @@ const ChatSection = ({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sourcesOpen, setSourcesOpen] = useState(false);
 
+  // Upload Modal State
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+
   return (
     <section className="h-screen overflow-hidden bg-zinc-950">
 
+      {/* Upload Modal */}
+      <ChatUploadModal
+        isOpen={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+      />
+
       <div className="flex h-full">
 
-        {/* Left Sidebar */}
+        {/* Sidebar */}
         <ChatSidebar
           uploadedDocuments={uploadedDocuments}
+          activeDocument={activeDocument}
+          setActiveDocument={setActiveDocument}
           isOpen={sidebarOpen}
         />
 
-        {/* Main Area */}
+        {/* Main Content */}
         <div className="flex flex-1 flex-col">
 
           <ChatHeader
@@ -48,20 +62,23 @@ const ChatSection = ({
             <div className="flex flex-1 flex-col">
 
               <div className="flex-1 overflow-y-auto">
+
                 <ChatMessages
                   messages={messages}
                   isTyping={isTyping}
                 />
+
               </div>
 
               <ChatInput
                 onSend={onSend}
                 isTyping={isTyping}
+                onUploadClick={() => setUploadModalOpen(true)}
               />
 
             </div>
 
-            {/* Source References */}
+            {/* Sources */}
             <SourceReferences
               sources={sources}
               isOpen={sourcesOpen}
