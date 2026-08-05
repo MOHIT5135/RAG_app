@@ -2,11 +2,12 @@ import { Bot, User } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 const ChatMessage = ({ message }) => {
+
   const isUser = message.role === "user";
 
   const formattedMessage = isUser
-    ? message.content
-    : message.content
+    ? (message.content || "")
+    : (message.content || "")
         .replace(/\[(\d+(?:,\s*\d+)*)\]/g, "")
         .trim();
 
@@ -44,7 +45,6 @@ const ChatMessage = ({ message }) => {
               : "border border-zinc-800 bg-zinc-900 text-zinc-100"
           }`}
         >
-          {/* Sender */}
           <p
             className={`mb-2 text-[11px] font-semibold uppercase tracking-wide ${
               isUser
@@ -55,31 +55,18 @@ const ChatMessage = ({ message }) => {
             {isUser ? "You" : "RAGify AI"}
           </p>
 
-          {/* Message */}
           {isUser ? (
             <p className="whitespace-pre-wrap break-words text-[15px] leading-7">
               {formattedMessage}
             </p>
           ) : (
             <div className="prose prose-invert max-w-none text-[15px] leading-7">
-              <ReactMarkdown
-                components={{
-                  ul: ({ children }) => (
-                    <ul style={{ paddingLeft: "20px", listStyleType: "disc" }}>
-                      {children}
-                    </ul>
-                  ),
-                  li: ({ children }) => (
-                    <li style={{ marginBottom: "6px" }}>{children}</li>
-                  ),
-                }}
-              >
+              <ReactMarkdown>
                 {formattedMessage}
               </ReactMarkdown>
             </div>
           )}
 
-          {/* Time */}
           {message.timestamp && (
             <p
               className={`mt-2 text-right text-[11px] ${

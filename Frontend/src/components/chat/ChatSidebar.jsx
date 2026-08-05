@@ -90,7 +90,7 @@ const ChatSidebar = ({
 
           </div>
 
-          <ChatHistory history={[]} />
+          <ChatHistory/>
 
         </div>
 
