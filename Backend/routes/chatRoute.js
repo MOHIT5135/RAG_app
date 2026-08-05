@@ -1,51 +1,10 @@
-// import express from "express";
-// import { answerWithCitations } from "../services/chatServices.js";
+import express from "express";
 
-// const router = express.Router();
+import { askQuestion } from "../controllers/chat.controller.js";
+import { authenticateUser } from "../middlewares/authMiddleware.js";
 
-// /**
-//  * ==========================================================
-//  * Ask Question
-//  * ==========================================================
-//  */
+const router = express.Router();
 
-// router.post("/", async (req, res) => {
+router.post("/", authenticateUser, askQuestion);
 
-//   try {
-
-//     const {
-//       query,
-//       documentId,
-//       totalChunks,
-//     } = req.body;
-
-//     if (!query || typeof query !== "string") {
-//       return res.status(400).json({
-//         success: false,
-//         message: "`query` is required and must be a string."
-//       });
-//     }
-
-//     const result = await answerWithCitations(
-//       query,
-//       documentId,
-//       totalChunks
-//     );
-
-//     return res.status(200).json({
-//       success: true,
-//       ...result
-//     });
-
-//   } catch (error) {
-
-//     return res.status(500).json({
-//       success: false,
-//       message: error.message,
-//     });
-
-//   }
-
-// });
-
-// export default router;
+export default router;

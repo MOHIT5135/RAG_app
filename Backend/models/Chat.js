@@ -1,40 +1,9 @@
 import mongoose from "mongoose";
 
-const messageSchema = new mongoose.Schema(
-  {
-    role: {
-      type: String,
-      enum: ["user", "assistant"],
-      required: true,
-    },
-
-    content: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-
-    sources: [
-      {
-        number: Number,
-        text: String,
-        fileName: String,
-        chunkIndex: Number,
-        distance: Number,
-        retrievalMethod: String,
-      },
-    ],
-  },
-  {
-    _id: false,
-    timestamps: true,
-  }
-);
-
 const chatSchema = new mongoose.Schema(
   {
     /**
-     * Owner
+     * Chat Owner
      */
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -44,7 +13,7 @@ const chatSchema = new mongoose.Schema(
     },
 
     /**
-     * Document associated with this conversation
+     * Selected document
      */
     documentId: {
       type: String,
@@ -53,10 +22,7 @@ const chatSchema = new mongoose.Schema(
     },
 
     /**
-     * Chat title
-     * Example:
-     * "Summarize Resume"
-     * "Explain JWT"
+     * Chat Title
      */
     title: {
       type: String,
@@ -66,11 +32,12 @@ const chatSchema = new mongoose.Schema(
     },
 
     /**
-     * Conversation messages
+     * Last message timestamp
+     * Used for sorting chats in sidebar.
      */
-    messages: {
-      type: [messageSchema],
-      default: [],
+    lastMessageAt: {
+      type: Date,
+      default: Date.now,
     },
   },
   {

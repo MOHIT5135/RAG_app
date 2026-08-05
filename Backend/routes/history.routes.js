@@ -1,30 +1,51 @@
 import express from "express";
 
-import authRoutes from "./authRoute.js";
-import documentRoutes from "./documentRoute.js";
-import chatRoutes from "./chatRoute.js";
+import {
+  getChatHistory,
+  getChatConversation,
+  deleteChatConversation,
+} from "../controllers/history.controller.js";
+
+import {
+  authenticateUser,
+} from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
 /**
  * ==========================================================
- * Authentication Routes
+ * Get User Chat History
  * ==========================================================
  */
-router.use("/auth", authRoutes);
+
+router.get(
+  "/",
+  authenticateUser,
+  getChatHistory
+);
 
 /**
  * ==========================================================
- * Document Routes
+ * Get Single Conversation
  * ==========================================================
  */
-router.use("/documents", documentRoutes);
+
+router.get(
+  "/:chatId",
+  authenticateUser,
+  getChatConversation
+);
 
 /**
  * ==========================================================
- * Chat Routes
+ * Delete Conversation
  * ==========================================================
  */
-router.use("/chat", chatRoutes);
+
+router.delete(
+  "/:chatId",
+  authenticateUser,
+  deleteChatConversation
+);
 
 export default router;
