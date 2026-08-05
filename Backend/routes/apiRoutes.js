@@ -2,7 +2,7 @@ import express from "express";
 
 import authRoutes from "./authRoute.js";
 import documentRoutes from "./documentRoute.js";
-import chatRoutes from "./chatRoute.js";
+import chatRoutes from "../controllers/chat.controller.js";
 
 const router = express.Router();
 

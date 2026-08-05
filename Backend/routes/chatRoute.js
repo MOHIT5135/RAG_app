@@ -1,51 +1,51 @@
-import express from "express";
-import { answerWithCitations } from "../services/chatServices.js";
+// import express from "express";
+// import { answerWithCitations } from "../services/chatServices.js";
 
-const router = express.Router();
+// const router = express.Router();
 
-/**
- * ==========================================================
- * Ask Question
- * ==========================================================
- */
+// /**
+//  * ==========================================================
+//  * Ask Question
+//  * ==========================================================
+//  */
 
-router.post("/", async (req, res) => {
+// router.post("/", async (req, res) => {
 
-  try {
+//   try {
 
-    const {
-      query,
-      documentId,
-      totalChunks,
-    } = req.body;
+//     const {
+//       query,
+//       documentId,
+//       totalChunks,
+//     } = req.body;
 
-    if (!query || typeof query !== "string") {
-      return res.status(400).json({
-        success: false,
-        message: "`query` is required and must be a string."
-      });
-    }
+//     if (!query || typeof query !== "string") {
+//       return res.status(400).json({
+//         success: false,
+//         message: "`query` is required and must be a string."
+//       });
+//     }
 
-    const result = await answerWithCitations(
-      query,
-      documentId,
-      totalChunks
-    );
+//     const result = await answerWithCitations(
+//       query,
+//       documentId,
+//       totalChunks
+//     );
 
-    return res.status(200).json({
-      success: true,
-      ...result
-    });
+//     return res.status(200).json({
+//       success: true,
+//       ...result
+//     });
 
-  } catch (error) {
+//   } catch (error) {
 
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+//     return res.status(500).json({
+//       success: false,
+//       message: error.message,
+//     });
 
-  }
+//   }
 
-});
+// });
 
-export default router;
+// export default router;
