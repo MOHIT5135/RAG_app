@@ -46,7 +46,7 @@ export default function Footer() {
 
       </div>
 
-      <div className="mx-auto max-w-7xl px-6 py-20 lg:px-8">
+      <div className="mx-auto max-w-7xl px-6 py-15 lg:px-8">
 
         {/* CTA */}
 

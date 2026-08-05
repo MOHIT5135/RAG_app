@@ -15,20 +15,30 @@ export default function ThemeToggle() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-
-        <Button
-          variant="outline"
-          size="icon"
-          className="rounded-full"
-        >
-          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-
-          <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-
-        </Button>
-
+      <Button
+        variant="outline"
+        size="icon"
+        className="rounded-full"
+      >
+      <DropdownMenuTrigger
+        className="
+          inline-flex
+          h-10
+          w-10
+          items-center
+          justify-center
+          rounded-full
+          border
+          border-border
+          hover:bg-muted
+          transition-colors
+        "
+      >
+        <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+        <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+        
       </DropdownMenuTrigger>
+      </Button>
 
       <DropdownMenuContent align="end">
 

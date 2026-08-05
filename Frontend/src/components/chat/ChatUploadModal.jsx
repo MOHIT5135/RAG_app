@@ -175,9 +175,9 @@ const handleUpload = async () => {
             onClick={handleBrowse}
           >
 
-            <div className="rounded-full bg-violet-600/20 p-4">
+            <div className="rounded-full bg-violet-600/20 p-0">
 
-              <Upload className="h-8 w-8 text-violet-400" />
+              <Upload className="h-1 w-8 text-violet-400" />
 
             </div>
 
@@ -200,7 +200,7 @@ const handleUpload = async () => {
                 handleBrowse();
               }}
               className="
-                mt-6
+                mt-3
                 rounded-xl
                 bg-violet-600
                 px-5

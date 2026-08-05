@@ -1,7 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Hero() {
+
+  const navigate = useNavigate();
+
   return (
     <section className="relative overflow-hidden">
 
@@ -69,12 +73,8 @@ export default function Hero() {
             <div className="mt-10 flex flex-wrap gap-4">
 
               <button
-                onClick={() =>
-                  document
-                    .getElementById("upload")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-                className="group inline-flex items-center justify-center gap-3 rounded-xl bg-white px-8 py-4 text-lg font-semibold uppercase tracking-wider text-black transition-all duration-300 hover:-translate-y-1 hover:bg-zinc-200 hover:shadow-2xl"
+                onClick={() => navigate("/chat")}
+                className="group inline-flex items-center justify-center gap-3 rounded-xl bg-white px-5 py-1 text-lg font-semibold uppercase tracking-wider text-black transition-all duration-300 hover:-translate-y-1 hover:bg-zinc-200 hover:shadow-2xl"
               >
                 START CHATTING
 
