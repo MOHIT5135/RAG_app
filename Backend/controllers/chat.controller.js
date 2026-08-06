@@ -83,14 +83,19 @@ export const askQuestion = async (req, res) => {
     let result;
 
     try {
-      
+      const priorMessages = chatId
+        ? await Message.find({ chatId: chat._id }).sort({ createdAt: 1 }).limit(10) // last N turns
+        : [];
+
+      const history = priorMessages.map((m) => ({ role: m.role, content: m.content }));
+
       result = await answerWithCitations({
         userInput: query,
         documentId,
         totalChunks: totalChunks || 10,
         userId,
+        history,
       });
-
       console.log(result);
     } catch (error) {
       /**
@@ -143,9 +148,8 @@ export const askQuestion = async (req, res) => {
     });
 
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    console.error("FULL ERROR DETAILS:", error);
+    console.error("FETCH CAUSE:", error.cause); // <--- THIS WILL SHOW THE EXACT REASON
+    return res.status(500).json({ success: false, message: error.message });
   }
 };

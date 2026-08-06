@@ -33,7 +33,7 @@ export const bm25Search = async (query, docIds, userId, topN = 30) => {
     : whereConditions[0] || undefined;
     
   const results = await collection.get({
-    where: docIds && docIds.length > 0 ? { docId: { "$in": docIds } } : undefined,
+    where: whereClause,
     include: ["documents", "metadatas"],
   });
 

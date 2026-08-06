@@ -4,14 +4,10 @@ import pdfParse from "pdf-parse/lib/pdf-parse.js";
 import mammoth from "mammoth";
 import JSZip from "jszip";
 import util from "util";
-import libre from "libreoffice-convert";
 /**
  * Extracts structured metadata (page numbers, headers) alongside raw text.
  * Returns Array<{ text: string, metadata: { pageNumber?: number, section?: string } }>
  */
-
-// Promisify the libreoffice conversion function
-libre.convertAsync = util.promisify(libre.convert);
 
 // Custom pager callback for pdf-parse to separate pages cleanly
 function renderPage(pageData) {

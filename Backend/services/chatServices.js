@@ -12,23 +12,37 @@ const getLLM = () => {
     throw new Error("Missing GEMINI_API_KEY environment variable.");
   }
 
-  llm = new ChatGoogleGenerativeAI({ apiKey, model: "gemini-3.5-flash-lite" });
+  llm = new ChatGoogleGenerativeAI({ 
+    apiKey, 
+    model: "gemini-3.5-flash-lite",
+    maxRetries: 3 // Built-in retry mechanism for transient network glitches
+  });
   return llm;
 };
 
 const standaloneQuestionTemplate = PromptTemplate.fromTemplate(
-  `Rewrite the following user message as a single, clear, standalone question.
-Remove filler words, small talk, and irrelevant context. Only output the question, nothing else.
+  `Given the following conversation history and a follow-up question, rephrase the follow-up question to be a standalone question.
 
-User message: {inputQuery}
+Chat History:
+{history}
+
+Follow-up Question: {inputQuery}
 
 Standalone question:`
 );
 
-export const createStandaloneQuestion = async (userInput) => {
-  const chain = standaloneQuestionTemplate.pipe(getLLM());
-  const response = await chain.invoke({ inputQuery: userInput });
-  return response.content.trim();
+export const createStandaloneQuestion = async (userInput, formattedHistory) => {
+  try {
+    const chain = standaloneQuestionTemplate.pipe(getLLM());
+    const response = await chain.invoke({ 
+      history: formattedHistory, 
+      inputQuery: userInput 
+    });
+    return response.content.trim();
+  } catch (err) {
+    console.warn("createStandaloneQuestion failed, falling back to raw input:", err.message);
+    return userInput;
+  }
 };
 
 const answerTemplate = PromptTemplate.fromTemplate(`
@@ -57,28 +71,41 @@ const getAdaptiveTopK = (totalChunks) => {
   if (totalChunks <= 30) return 5;   
   if (totalChunks <= 60) return 8;   
   if (totalChunks <= 150) return 12; 
-  return 15;                // hard cap at 15        
+  return 15;      // hard cap at 15        
 };
-export const answerWithCitations = async ({ userInput, documentId, totalChunks = 10, userId }) => {
+export const answerWithCitations = async ({ userInput, documentId, totalChunks = 10, userId, history = [] }) => {
   if (!userId) {
     throw new Error("answerWithCitations: `userId` is required.");
   }
   const docIds = documentId ? [documentId] : null;
-
-  // Fallback in case totalChunks is not provided
   const topK = getAdaptiveTopK(totalChunks || 10);
 
-  // Used ONLY for embedding + retrieval — stays clean and precise
-  console.time("create standalone Question");
-  const standaloneQuestion = await createStandaloneQuestion(userInput);
-  console.timeEnd("create standalone Question");
+  let queryToSearch = userInput;
+  // Only rewrite IF there is previous conversation history
+  if (history && history.length > 0) {
+    console.time("create standalone Question");
+    const formattedHistory = history
+      .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
+      .join("\n");
+
+    queryToSearch = await createStandaloneQuestion(userInput, formattedHistory);
+    console.timeEnd("create standalone Question");
+  }
 
   console.time("retrive chunks");
-  const { chunks, distances, metadatas, sources: retrievalMethods } = await retrieveRelevantChunks(standaloneQuestion, docIds, userId, topK);
+  const { chunks, distances, metadatas, sources: retrievalMethods } = await retrieveRelevantChunks(
+    queryToSearch, 
+    docIds, 
+    userId, 
+    topK
+  );
   console.timeEnd("retrive chunks");
-
   if (chunks.length === 0) {
-    return { standaloneQuestion, answer: "I couldn't find relevant information in this document to answer that.", sources: [] };
+      return { 
+        standaloneQuestion: queryToSearch, 
+        answer: "I couldn't find relevant information in this document to answer that.", 
+        sources: [] 
+      };
   }
 
   // Inject structural XML tags into the context passed to Gemini
@@ -109,10 +136,15 @@ export const answerWithCitations = async ({ userInput, documentId, totalChunks =
   console.time("Answer Generation");
   const response = await chain.invoke({
     context,
-    question: standaloneQuestion,
+    question: queryToSearch,
     originalMessage: userInput,
   });
   console.timeEnd("Answer Generation");
 
-  return { standaloneQuestion, answer: response.content, sources: citations, topKUsed : topK};
+  return { 
+    standaloneQuestion: queryToSearch, 
+    answer: response.content, 
+    sources: citations, 
+    topKUsed: topK 
+  };
 };
