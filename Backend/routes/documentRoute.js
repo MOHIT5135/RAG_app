@@ -49,24 +49,24 @@ router.post(
 
         // Loop through every uploaded file
         for (const file of req.files) {
+            // Returns Array<{ text: string, metadata: { pageNumber?, sectionHeader? } }>
+            const segments = await extractTextFromFile(file.path);
 
-            // Extract text from uploaded file
-            const extractedText = await extractTextFromFile(file.path);
+            // Calculate total extracted character length across all segments
+            const totalChars = segments.reduce((sum, seg) => sum + (seg.text?.length || 0), 0);
 
             processedFiles.push({
                 originalName: file.originalname,
                 filename: file.filename,
                 size: file.size,
-                extractedCharacters: extractedText.length,
-
-                // Temporary (only for testing)
-                extractedText
+                extractedCharacters: totalChars,
+                extractedSegments: segments // Passed as array of segments
             });
         }
         // Step 1: Chunk
         const chunkedResults = await chunkFiles(
-            processedFiles.map(f => ({ originalName: f.originalName, extractedText: f.extractedText })),
-            { chunkSize: 1000, chunkOverlap: 200 }
+            processedFiles.map(f => ({ originalName: f.originalName, extractedSegments: f.extractedSegments })),
+            { chunkSize: 1250, chunkOverlap: 150 }
         );
 
          // Step 2: Embed
@@ -81,7 +81,15 @@ router.post(
             const chunkTexts = file.chunks.map((c) => c.text);
             const chunkEmbeddings = file.chunks.map((c) => c.embedding);
 
-            await storeVectors(chunkTexts, chunkEmbeddings, file.originalName, docId);
+            // Map chunk metadata array for Chroma vector store
+            const chunkMetadatas = file.chunks.map((c) => ({
+                fileName: file.originalName,
+                pageNumber: c.pageNumber || null,
+                sectionHeader: c.sectionHeader || null,
+                chunkIndex: c.chunkIndex
+            }));
+
+            await storeVectors(chunkTexts, chunkEmbeddings, file.originalName, docId, req.user._id, chunkMetadatas) ;
 
             const savedDoc = await Document.create({
                 userId: req.user._id,

@@ -17,9 +17,21 @@ const B = 0.75;
  * every call — fine here, but would need a persistent index (e.g.
  * Elasticsearch/OpenSearch) at real production scale.
  */
-export const bm25Search = async (query, docIds, topN = 30) => {
+export const bm25Search = async (query, docIds, userId, topN = 30) => {
   const collection = await getCollection();
 
+  const whereConditions = [];
+  if (userId) {
+    whereConditions.push({ userId: String(userId) });
+  }
+  if (docIds && docIds.length > 0) {
+    whereConditions.push({ docId: { "$in": docIds } });
+  }
+
+  const whereClause = whereConditions.length > 1
+    ? { "$and": whereConditions }
+    : whereConditions[0] || undefined;
+    
   const results = await collection.get({
     where: docIds && docIds.length > 0 ? { docId: { "$in": docIds } } : undefined,
     include: ["documents", "metadatas"],

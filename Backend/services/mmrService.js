@@ -1,4 +1,7 @@
 const cosineSimilarity = (a, b) => {
+  if (!a || !b || !Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {
+    return 0;
+  }
   let dot = 0, normA = 0, normB = 0;
   for (let i = 0; i < a.length; i++) {
     dot += a[i] * b[i];
@@ -23,6 +26,7 @@ const DUPLICATE_THRESHOLD = 0.97; // near-identical embeddings above this are tr
 export const deduplicateCandidates = (candidates) => {
   const kept = [];
   for (const candidate of candidates) {
+    if (!candidate.embedding) continue; 
     const isDuplicate = kept.some(
       (k) => cosineSimilarity(k.embedding, candidate.embedding) >= DUPLICATE_THRESHOLD
     );
@@ -32,8 +36,7 @@ export const deduplicateCandidates = (candidates) => {
 };
 export const mmrRerank = (queryEmbedding, candidates, topK, lambda = 0.6) => {
   const selected = [];
-  const remaining = [...candidates];
-
+  const remaining = candidates.filter((c) => c && c.embedding);
   while (selected.length < topK && remaining.length > 0) {
     let bestIdx = -1;
     let bestScore = -Infinity;

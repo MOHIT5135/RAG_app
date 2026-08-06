@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { waitForCapacity, recordRequest } from "./rateLimiter.js";
 
-const EMBEDDING_MODEL = "gemini-embedding-001";
+const EMBEDDING_MODEL = "gemini-embedding-2";
 
 // 768 is a good default: ~25% of the storage of the full 3072-dim
 // vector with only ~0.26% quality loss -- fine for a portfolio-scale
@@ -116,7 +116,8 @@ export const embedDocuments = async (texts, options = {}) => {
         const response = await embedWithRetry(() =>
             ai.models.embedContent({
                 model: EMBEDDING_MODEL,
-                contents: batch,
+                // Pass batch array directly in contents
+                contents: batch.map(text => ({ parts: [{ text }] })),
                 config: { taskType: "RETRIEVAL_DOCUMENT", outputDimensionality: dimensions },
             })
         );

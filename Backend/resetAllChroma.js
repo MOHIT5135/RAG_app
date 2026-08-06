@@ -1,5 +1,5 @@
 // scripts/resetAllChroma.js
-import { client } from "./config/chroma.js";
+import client from "./config/chroma.js";
 
 const resetAllCollections = async () => {
   try {

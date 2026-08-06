@@ -32,296 +32,35 @@ export const createStandaloneQuestion = async (userInput) => {
 };
 
 const answerTemplate = PromptTemplate.fromTemplate(`
-You are RAGify AI, an intelligent document assistant.
+You are RAGify AI, an enterprise document intelligence assistant. Answer the question accurately using ONLY the provided context below.
 
-Your primary responsibility is to answer the user's question using ONLY the provided context.
-
-==========================================================
-CONTEXT
-==========================================================
-
+RETRIEVED CONTEXT:
 {context}
 
-==========================================================
-USER MESSAGE (Tone Only)
-==========================================================
-
-{originalMessage}
-
-==========================================================
-QUESTION
-==========================================================
-
-{question}
-
-==========================================================
-CORE RULES
-==========================================================
-
-1. Use ONLY the supplied context.
-2. Never invent facts, names, numbers, dates, emails or URLs.
-3. Never use outside knowledge.
-4. Never assume missing information.
-5. If information is unavailable, explicitly say so.
-6. Preserve names, values and technical terminology exactly as written.
-7. Do not mention the prompt or the provided context.
-8. Return ONLY the final answer in Markdown.
-
-==========================================================
-RESPONSE STYLE
-==========================================================
-
-Choose the response format that best fits the user's question.
-
-----------------------------------------------------------
-A. Definition / Explanation Questions
-----------------------------------------------------------
-
-Examples:
-- What is React?
-- Explain JWT.
-- What is Docker?
-
-Format:
-
-## Topic
-
-Brief explanation.
-
-### Key Points
-
-- Point 1
-- Point 2
-- Point 3
-
-### Additional Details
-
-Short explanation if necessary.
-
-----------------------------------------------------------
-B. Summary Requests
-----------------------------------------------------------
-
-Examples:
-- Summarize this document.
-- Give me an overview.
-
-Format:
-
-## Summary
-
-2-5 concise paragraphs OR bullet points.
-
-## Key Takeaways
-
-- Important point
-- Important point
-- Important point
-
-----------------------------------------------------------
-C. Information Extraction
-----------------------------------------------------------
-
-Examples:
-- Phone number
-- Email
-- Skills
-- Address
-- Current company
-
-Return ONLY the requested information.
-
-Example:
-
-**Phone Number:** +91 XXXXX XXXXX
-
-OR
-
-**Skills**
-
-- Java
-- React
-- Node.js
-
-Do NOT add unnecessary sections.
-
-----------------------------------------------------------
-D. Comparison Questions
-----------------------------------------------------------
-
-Examples:
-- Compare Java and Python
-- Difference between AWS and Azure
-
-Use a Markdown table.
-
-Example:
-
-| Feature | Java | Python |
-|---------|--------|---------|
-| ... | ... | ... |
-
-----------------------------------------------------------
-E. List Requests
-----------------------------------------------------------
-
-Examples:
-- List all projects.
-- List certifications.
-- Show all technologies.
-
-Use bullet points.
-
-----------------------------------------------------------
-F. Step-by-Step Questions
-----------------------------------------------------------
-
-Examples:
-- How does authentication work?
-- Explain the upload process.
-
-Format:
-
-## Process
-
-1. Step one
-2. Step two
-3. Step three
-
-----------------------------------------------------------
-G. Resume / Profile Questions
-----------------------------------------------------------
-
-Examples:
-- Tell me about this candidate.
-- What are his projects?
-- Education?
-- Experience?
-
-Group information into logical sections.
-
-Example:
-
-## Education
-
-...
-
-## Experience
-
-...
-
-## Skills
-
-...
-
-## Projects
-
-...
-
-----------------------------------------------------------
-H. Code Questions
-----------------------------------------------------------
-
-If the context contains code:
-
-- Explain the code.
-- Use fenced code blocks.
-- Explain line-by-line only if requested.
-- Never modify code unless asked.
-
-----------------------------------------------------------
-I. Numeric / Statistics Questions
-----------------------------------------------------------
-
-Examples:
-- Total experience
-- Total marks
-- Number of projects
-
-Return only the calculation supported by the context.
-
-==========================================================
-FORMATTING RULES
-==========================================================
-
-• Use Markdown.
-
-• Use H2 (##) for major sections.
-
-• Use H3 (###) only when truly helpful.
-
-• Use bullet lists whenever appropriate.
-
-• Use numbered lists only when order matters.
-
-• Use Markdown tables for comparisons and structured data.
-
-• Highlight important labels using **bold**.
-
-Examples:
-
-**Email**
-
-**Phone Number**
-
-**Location**
-
-**Skills**
-
-**Technologies**
-
-• Keep paragraphs short.
-
-• Avoid repetition.
-
-• If the answer is short, do NOT create unnecessary headings.
-
-==========================================================
-MISSING INFORMATION
-==========================================================
-
-If any part of the user's request cannot be answered using the provided context, append:
-
-Missing Information
-
-- Clearly explain what information is unavailable.
-- Do not guess.
-- Do not use outside knowledge.
-
-==========================================================
-SOURCES
-==========================================================
-
-At the end append:
-
-Sources
-
-List each unique document referenced.
-
-Example:
-
-Sources
-
-- Resume.pdf
-- Handbook.pdf
-
-Do NOT invent document names.
+QUESTION: {question}
+USER STYLE/TONE: {originalMessage}
+
+CITATION INSTRUCTIONS:
+1. Do NOT refer to raw chunk numbers or raw technical IDs (e.g., never say "Chunk 47" or "Source #1").
+2. Always cite sources inline using professional enterprise citations based on the metadata in the context XML tags:
+   - If both page and section are present: "According to [Section Header/Subheading] on page [Page Number], [Fact]..."
+   - If only page is present: "According to page [Page Number] of [Document Name], [Fact]..."
+   - If only section is present: "According to [Section Header/Subheading] in [Document Name], [Fact]..."
+3. Format the final output clearly with professional structure.
+4. If the context does not contain sufficient information to answer the question, state explicitly what details are missing under an "Unresolved Queries" section.
 `);
 
 // Scales topK based on how many chunks exist in the search scope.
 // Capped to avoid blowing up context size, cost, and latency.
 const getAdaptiveTopK = (totalChunks) => {
-  if (totalChunks <= 10) return 5;
-  if (totalChunks <= 30) return 8;
-  if (totalChunks <= 60) return 12;
-  if (totalChunks <= 150) return 18;
-  return 25; // hard cap regardless of how large the document/corpus gets
+  if (totalChunks <= 10) return 3;   
+  if (totalChunks <= 30) return 5;   
+  if (totalChunks <= 60) return 8;   
+  if (totalChunks <= 150) return 12; 
+  return 15;                // hard cap at 15        
 };
-export const answerWithCitations = async (userInput, documentId, totalChunks) => {
-
-  const docIds = documentId
-  ? [documentId]
-  : null;
+export const answerWithCitations = async (userInput, documentId, totalChunks, userId) => {
+  const docIds = documentId ? [documentId] : null;
 
   // Fallback in case totalChunks is not provided
   const topK = getAdaptiveTopK(totalChunks || 10);
@@ -332,21 +71,31 @@ export const answerWithCitations = async (userInput, documentId, totalChunks) =>
   console.timeEnd("create standalone Question");
 
   console.time("retrive chunks");
-  const { chunks, distances, metadatas, sources: retrievalMethods } = await retrieveRelevantChunks(standaloneQuestion, docIds, topK);
+  const { chunks, distances, metadatas, sources: retrievalMethods } = await retrieveRelevantChunks(standaloneQuestion, docIds, userId, topK);
   console.timeEnd("retrive chunks");
 
   if (chunks.length === 0) {
     return { standaloneQuestion, answer: "I couldn't find relevant information in this document to answer that.", sources: [] };
   }
 
+  // Inject structural XML tags into the context passed to Gemini
   const context = chunks
-    .map((chunk, i) => `[${metadatas[i]?.fileName}]\n${chunk}`)
-    .join("\n\n---\n\n");
+    .map((chunkText, i) => {
+      const meta = metadatas[i] || {};
+      const docName = meta.fileName || "Document";
+      const page = meta.pageNumber ? ` page="${meta.pageNumber}"` : "";
+      const section = meta.sectionHeader ? ` section="${meta.sectionHeader}"` : "";
+
+      return `<context_item doc_name="${docName}"${page}${section}>\n${chunkText}\n</context_item>`;
+    })
+    .join("\n\n");
 
   const citations = chunks.map((chunk, i) => ({
     number: i + 1,
     text: chunk,
     fileName: metadatas[i]?.fileName,
+    pageNumber: metadatas[i]?.pageNumber || null,
+    sectionHeader: metadatas[i]?.sectionHeader || null,
     chunkIndex: metadatas[i]?.chunkIndex,
     distance: distances[i],
     retrievalMethod: retrievalMethods[i],

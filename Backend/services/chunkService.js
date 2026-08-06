@@ -27,30 +27,30 @@ const DEFAULT_CHUNK_OVERLAP = 150; // characters shared between consecutive chun
  * @param {number} options.chunkOverlap - Characters of overlap between chunks
  * @returns {Promise<Array<{ chunkIndex: number, text: string, charCount: number }>>}
  */
-export const chunkText = async (text, options = {}) => {
+
+export const chunkText = async (text, metadata = {}, options = {}) => {
     const {
         chunkSize = DEFAULT_CHUNK_SIZE,
         chunkOverlap = DEFAULT_CHUNK_OVERLAP
     } = options;
 
     if (!text || typeof text !== "string") {
-        throw new Error("chunkText: `text` must be a non-empty string.");
+        return [];
     }
 
-    // Normalize whitespace a bit (collapse >2 blank lines, trim)
     const cleanedText = text.replace(/\n{3,}/g, "\n\n").trim();
-
-    const splitter = new RecursiveCharacterTextSplitter({
-        chunkSize,
-        chunkOverlap
-    });
-
+    const splitter = new RecursiveCharacterTextSplitter({ chunkSize, chunkOverlap });
     const rawChunks = await splitter.splitText(cleanedText);
 
     return rawChunks.map((chunkText, index) => ({
         chunkIndex: index,
         text: chunkText,
-        charCount: chunkText.length
+        charCount: chunkText.length,
+
+       // Attach structured metadata directly onto every chunk object
+        pageNumber: metadata.pageNumber || null,
+        sectionHeader: metadata.sectionHeader || null,
+        source: metadata.source || "Document"
     }));
 };
 
@@ -67,15 +67,38 @@ export const chunkFiles = async (files, options = {}) => {
     const results = [];
 
     for (const file of files) {
-        const chunks = (await chunkText(file.extractedText, options)).map((chunk) => ({
-            ...chunk,
-            source: file.originalName
-        }));
+        const allChunks = [];
+
+        // Determine if file contains an array of segments or a raw extractedText string
+        const segments = Array.isArray(file.extractedSegments)
+            ? file.extractedSegments
+            : typeof file.extractedText === "string"
+                ? [{ text: file.extractedText, metadata: {} }]
+                : [];
+
+        if (segments.length === 0 && typeof file === "string") {
+            // Handle raw string input if passed directly
+            segments.push({ text: file, metadata: {} });
+        }
+
+        for (const segment of segments) {
+            const chunks = await chunkText(
+                segment.text,
+                {
+                    source: file.originalName || file.name || "Document",
+                    pageNumber: segment.metadata?.pageNumber,
+                    sectionHeader: segment.metadata?.sectionHeader
+                },
+                options
+            );
+
+            allChunks.push(...chunks);
+        }
 
         results.push({
-            originalName: file.originalName,
-            totalChunks: chunks.length,
-            chunks
+            originalName: file.originalName || file.name || "Document",
+            totalChunks: allChunks.length,
+            chunks: allChunks
         });
     }
 

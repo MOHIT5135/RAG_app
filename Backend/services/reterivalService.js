@@ -12,24 +12,35 @@ const FETCH_POOL_SIZE = 50; // candidate pool size before MMR narrows to topK
  * @param {string[]|null} docIds - array of docIds to scope search to, or null for "search all"
  * @param {number} topK - how many chunks to retrieve
  */
-export const retrieveRelevantChunks = async (userQuery, docIds, topK = 5) => {
+export const retrieveRelevantChunks = async (userQuery, docIds, userId, topK = 5) => {
   if (!userQuery || typeof userQuery !== "string") {
     throw new Error("retrieveRelevantChunks: `userQuery` must be a non-empty string.");
   }
+  if (!userId) {
+    throw new Error("retrieveRelevantChunks: `userId` is required.");
+  }
+  const safeUserId = String(userId);
   console.time("embed query");
   const queryEmbedding = await embedQuery(userQuery);
   console.timeEnd("embed query");
   const collection = await getCollection();
 
   // --- Dense: vector search, larger pool, embeddings included ---
+  const whereConditions = [{ userId: safeUserId }];
+  if (docIds && docIds.length > 0) {
+    whereConditions.push({ docId: { "$in": docIds } });
+    // { docId: { "$in": docIds } } works for both single-file search (array of length 1) and
+    // "all files" (skip the where clause entirely) — one code path handles both cases.
+  }
+  const whereClause = { "$and": whereConditions };
+
   console.time("vectorSearch");
   const vectorResults = await collection.query({
     queryEmbeddings: [queryEmbedding],
     nResults: FETCH_POOL_SIZE,
-    where: docIds && docIds.length > 0 ? { docId: { "$in": docIds } } : undefined,
+    where: whereClause,
     include: ["documents", "metadatas", "distances", "embeddings"],
-    // { docId: { "$in": docIds } } works for both single-file search (array of length 1) and
-    // "all files" (skip the where clause entirely) — one code path handles both cases.
+    
   });
   console.timeEnd("vectorSearch");
   const vectorCandidates = (vectorResults.ids[0] || []).map((id, i) => ({
@@ -43,7 +54,7 @@ export const retrieveRelevantChunks = async (userQuery, docIds, topK = 5) => {
 
   // --- Sparse: BM25 keyword search, same scope ---
   console.time("bm25Search");
-  const bm25Candidates = await bm25Search(userQuery, docIds, FETCH_POOL_SIZE);
+  const bm25Candidates = await bm25Search(userQuery, docIds, safeUserId, FETCH_POOL_SIZE);
   console.timeEnd("bm25Search");
 
   // --- Merge, dedupe by chunk id, mark hybrid hits ---
@@ -62,12 +73,18 @@ export const retrieveRelevantChunks = async (userQuery, docIds, topK = 5) => {
   const missingIds = [...merged.values()].filter((c) => !c.embedding).map((c) => c.id);
   if (missingIds.length > 0) {
     const fetched = await collection.get({ ids: missingIds, include: ["embeddings"] });
-    fetched.ids.forEach((id, i) => { merged.get(id).embedding = fetched.embeddings[i]; });
+    if (fetched && fetched.ids) {
+      fetched.ids.forEach((id, i) => {
+        if (merged.has(id) && fetched.embeddings && fetched.embeddings[i]) {
+          merged.get(id).embedding = fetched.embeddings[i];
+        }
+      });
+    }
   }
-
   // --- MMR re-ranking narrows the merged pool down to a diverse topK ---
   console.time("dedupAndMMR");
-  const deduped = deduplicateCandidates([...merged.values()]);
+  const candidatesWithEmbeddings = [...merged.values()].filter((c) => c.embedding !== null);
+  const deduped = deduplicateCandidates(candidatesWithEmbeddings);
   const final = mmrRerank(queryEmbedding, deduped, topK);
   console.timeEnd("dedupAndMMR");
   return {
