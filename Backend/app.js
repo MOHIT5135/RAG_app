@@ -14,6 +14,7 @@ import { checkHeartbeat } from "./config/chroma.js";
 
 import { requestLogger } from "./middlewares/logger.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
+import historyRoutes from "./routes/history.routes.js";
 
 if (!process.env.MONGO_URI) {
   throw new Error("MONGO_URI is missing in .env file");
@@ -69,6 +70,7 @@ if (!fs.existsSync("uploads/documents")) {
  * ==========================================================
  */
 app.use("/api", apiRoutes);
+app.use("/api/v1/history", historyRoutes);
 
 /**
  * ==========================================================

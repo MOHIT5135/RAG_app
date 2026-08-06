@@ -1,42 +1,149 @@
-import { MessageSquareText } from "lucide-react";
+import {
+  MessageSquare,
+  Trash2,
+} from "lucide-react";
 
-const ChatHistory = ({ history = [] }) => {
+import { useChatHistory } from "@/context/ChatHistoryContext";
+
+const ChatHistory = () => {
+
+  const {
+
+    history,
+
+    selectedChat,
+
+    loadConversation,
+
+    removeConversation,
+
+  } = useChatHistory();
+
+  if (history.length === 0) {
+
+    return (
+
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3">
+
+        <p className="text-center text-xs text-zinc-500">
+
+          No conversations yet
+
+        </p>
+
+      </div>
+
+    );
+
+  }
+
   return (
-    <div className="space-y-3">
 
-      {history.length === 0 ? (
-        <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-4 text-center">
-          <p className="text-sm text-zinc-400">
-            No conversations yet.
-          </p>
-        </div>
-      ) : (
-        history.map((chat) => (
+    <div className="space-y-1">
+
+      {history.map((chat) => {
+
+        const isActive =
+          selectedChat?._id === chat._id;
+
+        return (
+
           <button
-            key={chat.id}
-            className="flex w-full items-start gap-3 rounded-xl border border-zinc-700 bg-zinc-900 p-4 text-left transition-all duration-200 hover:border-violet-500 hover:bg-zinc-800"
+            key={chat._id}
+            onClick={() => loadConversation(chat._id)}
+            className={`
+              group
+              flex
+              w-full
+              items-center
+              gap-2
+              rounded-lg
+              border
+              px-3
+              py-2
+              text-left
+              transition-all
+              duration-200
+
+              ${
+                isActive
+                  ? "border-violet-500 bg-violet-500/10"
+                  : "border-zinc-800 bg-zinc-900 hover:border-violet-500 hover:bg-zinc-800"
+              }
+            `}
           >
-            <div className="rounded-lg bg-violet-600/20 p-2">
-              <MessageSquareText className="h-5 w-5 text-violet-400" />
+
+            {/* Icon */}
+
+            <div
+              className={`
+                flex
+                h-8
+                w-8
+                shrink-0
+                items-center
+                justify-center
+                rounded-md
+
+                ${
+                  isActive
+                    ? "bg-violet-600/30"
+                    : "bg-violet-600/15"
+                }
+              `}
+            >
+
+              <MessageSquare className="h-4 w-4 text-violet-400" />
+
             </div>
 
-            <div className="flex-1 overflow-hidden">
+            {/* Title */}
 
-              <h4 className="truncate font-medium text-white">
+            <div className="min-w-0 flex-1">
+
+              <p
+                className="truncate text-sm font-medium text-white"
+                title={chat.title}
+              >
+
                 {chat.title}
-              </h4>
 
-              <p className="mt-1 text-xs text-zinc-400">
-                {chat.timestamp}
               </p>
 
             </div>
+
+            {/* Delete */}
+
+            <Trash2
+              onClick={(e) => {
+
+                e.stopPropagation();
+
+                removeConversation(chat._id);
+
+              }}
+              className="
+                h-4
+                w-4
+                shrink-0
+                text-zinc-500
+                opacity-0
+                transition-all
+                hover:text-red-400
+                group-hover:opacity-100
+              "
+            />
+
           </button>
-        ))
-      )}
+
+        );
+
+      })}
 
     </div>
+
   );
+
 };
 
 export default ChatHistory;

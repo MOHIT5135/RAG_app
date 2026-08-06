@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useChatHistory } from "@/context/ChatHistoryContext";
 
 import { askQuestion } from "../services/chatService";
 import {
@@ -8,10 +9,23 @@ import {
 
 const useChat = (activeDocument = null) => {
 
-  const [messages, setMessages] = useState([]);
+  const {
+    messages,
+    setMessages,
+    selectedChat,
+    setSelectedChat,
+    refreshHistory,
+  } = useChatHistory();
+
   const [sources, setSources] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState(null);
+
+  /**
+   * ==========================================================
+   * Current Conversation
+   * ==========================================================
+   */
 
   /**
    * ==========================================================
@@ -41,11 +55,33 @@ const useChat = (activeDocument = null) => {
 
     try {
 
-      const response = await askQuestion(
+      const response = await askQuestion({
+
         query,
-        activeDocument.docId,
-        activeDocument.totalChunks
-      );
+
+        documentId: activeDocument.docId,
+
+        totalChunks: activeDocument.totalChunks,
+
+        chatId: selectedChat?._id || null,
+
+      });
+
+      if (response.chatId && !selectedChat) {
+
+        setSelectedChat({
+          _id: response.chatId,
+        });
+
+        await refreshHistory();
+
+      }
+
+      /**
+       * Store chatId returned by backend.
+       * First message creates a chat.
+       * Remaining messages reuse it.
+       */
 
       const assistantMessage = createAssistantMessage(
         response.answer,
@@ -82,16 +118,15 @@ const useChat = (activeDocument = null) => {
 
   /**
    * ==========================================================
-   * Clear Chat
+   * New Chat
    * ==========================================================
    */
 
   const clearChat = () => {
 
     setMessages([]);
-
     setSources([]);
-
+    setSelectedChat(null);
     setError(null);
 
   };
@@ -99,15 +134,10 @@ const useChat = (activeDocument = null) => {
   return {
 
     messages,
-
     sources,
-
     isTyping,
-
     error,
-
     sendMessage,
-
     clearChat,
 
   };

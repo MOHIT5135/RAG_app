@@ -8,6 +8,7 @@ import "./index.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/context/AuthContext";
 import { DocumentProvider } from "@/context/DocumentContext";
+import { ChatHistoryProvider } from "@/context/ChatHistoryContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -20,7 +21,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(
 
           <DocumentProvider>
 
-            <App />
+            <ChatHistoryProvider>
+
+              <App />
+
+            </ChatHistoryProvider>
 
           </DocumentProvider>
 

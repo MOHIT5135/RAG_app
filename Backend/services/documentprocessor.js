@@ -16,16 +16,37 @@ libre.convertAsync = util.promisify(libre.convert);
 // Custom pager callback for pdf-parse to separate pages cleanly
 function renderPage(pageData) {
     return pageData.getTextContent().then((textContent) => {
-        let lastY, text = '';
+         let lastY, text = '';
+        const lines = []; // { text, fontSize }
+
+        let currentLine = '';
+        let currentFontSize = null;
         for (let item of textContent.items) {
+            const fontSize = Math.abs(item.transform[0]); // approximate font scale
+
             if (lastY == item.transform[5] || !lastY) {
                 text += item.str;
+                currentLine += item.str;
+                currentFontSize = fontSize;
             } else {
                 text += '\n' + item.str;
+                if (currentLine.trim()) lines.push({ text: currentLine.trim(), fontSize: currentFontSize });
+                currentLine = item.str;
+                currentFontSize = fontSize;
             }
             lastY = item.transform[5];
         }
-        return text;
+        if (currentLine.trim()) lines.push({ text: currentLine.trim(), fontSize: currentFontSize });
+
+        // Heading heuristic: short line, noticeably larger font than the page's typical (median) size
+        const sizes = lines.map(l => l.fontSize).filter(Boolean).sort((a, b) => a - b);
+        const medianSize = sizes[Math.floor(sizes.length / 2)] || 0;
+
+        const heading = lines.find(
+            (l) => l.fontSize > medianSize * 1.25 && l.text.length < 80 && !/[.,;:]$/.test(l.text)
+        );
+
+        return { text, sectionHeader: heading?.text || null };
     });
 }
 
@@ -42,12 +63,13 @@ export const extractTextFromFile = async (filePath) => {
             // Parse page by page using pdf-parse custom pager callback
             await pdfParse(buffer, {
                 pagerender: async (pageData) => {
-                    const text = await renderPage(pageData);
+                    const { text, sectionHeader } = await renderPage(pageData);
                     if (text.trim()) {
                         pageSegments.push({
                             text: text.trim(),
                             metadata: {
-                                pageNumber: pageData.pageIndex + 1
+                                pageNumber: pageData.pageIndex + 1,
+                                sectionHeader, // now actually populated
                             }
                         });
                     }
@@ -60,29 +82,36 @@ export const extractTextFromFile = async (filePath) => {
 
         // ================= DOCX ( with Auto-PDF Conversion) =================
         case ".docx": {
-            // 1. Read the raw DOCX file
             const docxBuffer = await fs.readFile(filePath);
-            
-            // 2. Convert it to a PDF buffer in memory behind the scenes
-            const pdfBuffer = await libre.convertAsync(docxBuffer, ".pdf", undefined); 
 
-            // 3. Process the newly created PDF buffer using your existing pdf-parse logic
-            const pageSegments = [];
-            await pdfParse(pdfBuffer, {
-                pagerender: async (pageData) => {
-                    const text = await renderPage(pageData);
-                    if (text.trim()) {
-                        pageSegments.push({
-                            text: text.trim(),
-                            // We now get real page numbers for Word documents!
-                            metadata: { pageNumber: pageData.pageIndex + 1 } 
-                        });
+            // Convert headings into a marker we can split on, preserving structure
+            const result = await mammoth.convertToHtml(
+                { buffer: docxBuffer },
+                { styleMap: ["p[style-name='Heading 1'] => h1", "p[style-name='Heading 2'] => h2"] }
+            );
+
+            const html = result.value;
+            const sections = html.split(/(?=<h[12]>)/);
+
+            const segments = sections
+                .map((section) => {
+                    const headingMatch = section.match(/<h[12]>(.*?)<\/h[12]>/s); // added 's' flag for multi-line safety
+
+                    let sectionHeader = null;
+                    if (headingMatch) {
+                        sectionHeader = headingMatch[1]
+                            .replace(/<[^>]+>/g, "")   // strip any nested tags (the <a id="..."> anchors)
+                            .replace(/&amp;/g, "&")     // decode common HTML entities mammoth may produce
+                            .replace(/&quot;/g, '"')
+                            .replace(/\s+/g, " ")
+                            .trim();
                     }
-                    return text;
-                }
-            });
 
-            return pageSegments;
+                    const text = section.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+                    return text ? { text, metadata: { sectionHeader: sectionHeader || null, pageNumber: null } } : null;
+                })
+                .filter(Boolean);
+            return segments;
         }
 
         // ================= PPTX (Slide-level Extraction) =================

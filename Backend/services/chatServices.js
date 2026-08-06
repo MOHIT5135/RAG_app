@@ -59,7 +59,10 @@ const getAdaptiveTopK = (totalChunks) => {
   if (totalChunks <= 150) return 12; 
   return 15;                // hard cap at 15        
 };
-export const answerWithCitations = async (userInput, documentId, totalChunks, userId) => {
+export const answerWithCitations = async ({ userInput, documentId, totalChunks = 10, userId }) => {
+  if (!userId) {
+    throw new Error("answerWithCitations: `userId` is required.");
+  }
   const docIds = documentId ? [documentId] : null;
 
   // Fallback in case totalChunks is not provided
