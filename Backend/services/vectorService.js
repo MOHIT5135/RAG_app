@@ -21,7 +21,7 @@ export const storeVectors = async (chunks, embeddings, fileName, docId, userId, 
   await collection.add({ 
     ids, 
     embeddings,
-    documents: chunks, // Swapped 'texts' for 'chunks'
+    documents: chunks, 
     metadatas: metadataPayload
   });
   
