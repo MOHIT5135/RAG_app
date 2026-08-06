@@ -15,7 +15,7 @@ const api = axios.create({
   withCredentials: true,
 
   // Request timeout (10 seconds)
-  timeout: 10000,
+  timeout: 60000,
 });
 
 // Export the axios instance

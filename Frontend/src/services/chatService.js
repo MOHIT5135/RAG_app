@@ -1,14 +1,8 @@
-import axios from "axios";
+import api from "./api";
 import chatConfig from "../data/chatConfig";
 
 console.log("Backend URL:", import.meta.env.VITE_API_BASE_URL);
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
 
 export const askQuestion = async (
   query,
