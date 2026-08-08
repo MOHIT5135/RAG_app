@@ -67,6 +67,7 @@ const ChatSection = ({
             activeDocument={activeDocument}
             setActiveDocument={setActiveDocument}
             isOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
           />
         </div>
 
