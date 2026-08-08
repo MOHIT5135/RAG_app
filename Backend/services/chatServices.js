@@ -21,7 +21,12 @@ const getLLM = () => {
 };
 
 const standaloneQuestionTemplate = PromptTemplate.fromTemplate(
-  `Given the following conversation history and a follow-up question, rephrase the follow-up question to be a standalone question.
+  `Given the following conversation history and a follow-up question, rephrase the follow-up
+question to be a single, clear, standalone question.
+
+Use the history only to resolve pronouns or implicit references (e.g. "it", "that", "the same topic").
+Do NOT introduce new document titles, section names, or specific facts from the history into the
+rewritten question unless the follow-up question explicitly asks about them.
 
 Chat History:
 {history}
@@ -73,7 +78,14 @@ const getAdaptiveTopK = (totalChunks) => {
   if (totalChunks <= 150) return 12; 
   return 15;      // hard cap at 15        
 };
-export const answerWithCitations = async ({ userInput, documentId, totalChunks = 10, userId, history = [] }) => {
+export const answerWithCitations = async ({ 
+  userInput, 
+  documentId, 
+  totalChunks = 10, 
+  userId, 
+  history = [],
+  onToken
+}) => {
   if (!userId) {
     throw new Error("answerWithCitations: `userId` is required.");
   }
@@ -134,16 +146,23 @@ export const answerWithCitations = async ({ userInput, documentId, totalChunks =
   // Pass the ORIGINAL user input here too — not just the sanitized standalone question
   const chain = answerTemplate.pipe(getLLM());
   console.time("Answer Generation");
-  const response = await chain.invoke({
+  // Stream tokens incrementally to client
+  const stream = await chain.stream({
     context,
     question: queryToSearch,
     originalMessage: userInput,
-  });
+  }); 
+  let fullAnswer = "";
+  for await (const chunk of stream) {
+    const textChunk = chunk.content;
+    fullAnswer += textChunk;
+    if (onToken) onToken(textChunk);
+  }
   console.timeEnd("Answer Generation");
 
   return { 
     standaloneQuestion: queryToSearch, 
-    answer: response.content, 
+    answer: fullAnswer, 
     sources: citations, 
     topKUsed: topK 
   };

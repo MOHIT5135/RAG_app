@@ -95,6 +95,14 @@ export const askQuestion = async (req, res) => {
         totalChunks: totalChunks || 10,
         userId,
         history,
+        onToken: (token) => {
+          res.write(`data: ${JSON.stringify({ type: "token", token })}\n\n`);
+          
+          // NEW: Force Express/compression middleware to push the chunk over the network immediately
+          if (res.flush) {
+            res.flush();
+          }
+        },
       });
       console.log(result);
     } catch (error) {
@@ -138,18 +146,29 @@ export const askQuestion = async (req, res) => {
      * Response
      * ======================================================
      */
-    return res.status(200).json({
-      success: true,
-      chatId: chat._id,
-      answer: result.answer,
-      sources: result.sources,
-      standaloneQuestion: result.standaloneQuestion,
-      topKUsed: result.topKUsed,
-    });
+    res.write(
+      `data: ${JSON.stringify({
+        type: "done",
+        chatId: chat._id,
+        answer: result.answer,
+        sources: result.sources,
+        standaloneQuestion: result.standaloneQuestion,
+        topKUsed: result.topKUsed,
+      })}\n\n`
+    );
+
+    return res.end();
 
   } catch (error) {
     console.error("FULL ERROR DETAILS:", error);
-    console.error("FETCH CAUSE:", error.cause); // <--- THIS WILL SHOW THE EXACT REASON
+    
+    // If the stream already started, send an error event over the stream
+    if (res.headersSent) {
+      res.write(`data: ${JSON.stringify({ type: "error", message: error.message })}\n\n`);
+      return res.end();
+    } 
+    
+    // If the stream hasn't started yet, it's safe to send a standard 500 JSON response
     return res.status(500).json({ success: false, message: error.message });
   }
 };

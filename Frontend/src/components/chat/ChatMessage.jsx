@@ -1,5 +1,6 @@
 import { Bot, User } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const ChatMessage = ({ message }) => {
 
@@ -61,7 +62,7 @@ const ChatMessage = ({ message }) => {
             </p>
           ) : (
             <div className="prose prose-invert max-w-none text-[15px] leading-7">
-              <ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {formattedMessage}
               </ReactMarkdown>
             </div>
