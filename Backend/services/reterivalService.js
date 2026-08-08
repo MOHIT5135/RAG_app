@@ -60,7 +60,7 @@ export const retrieveRelevantChunks = async (userQuery, docIds, userId, topK = 5
     source: "vector",
   }));
 
-  // 4. Merge candidates & identify hybrid hits
+  // 4. Merge vector and BM25 candidates
   const merged = new Map();
   for (const c of vectorCandidates) merged.set(c.id, c);
 
@@ -68,51 +68,18 @@ export const retrieveRelevantChunks = async (userQuery, docIds, userId, topK = 5
     if (merged.has(c.id)) {
       merged.get(c.id).bm25Score = c.bm25Score;
       merged.get(c.id).source = "hybrid";
-    } else {
-      // Pure BM25 hit — keep distance as null or populate via vector lookup
-      merged.set(c.id, { ...c, embedding: null, source: "bm25" });
     }
   }
 
-  // 5. Fetch missing embeddings for BM25-only candidates (if any exist)
-  const missingIds = [...merged.values()].filter((c) => !c.embedding).map((c) => c.id);
-  if (missingIds.length > 0) {
-    const fetched = await collection.get({ ids: missingIds, include: ["embeddings"] });
-    if (fetched && fetched.ids) {
-      fetched.ids.forEach((id, i) => {
-        if (merged.has(id) && fetched.embeddings && fetched.embeddings[i]) {
-          merged.get(id).embedding = fetched.embeddings[i];
-        }
-      });
-    }
-  }
-
-  // 6. STRICT RELEVANCE FILTERING:
-  // - If a chunk has a distance score, keep it ONLY if distance <= 0.70
-  // - If it's a pure BM25 hit with no distance, drop it unless it also scored in vector space
-  const MAX_DISTANCE_THRESHOLD = 0.70;
+  // 5. Filter out candidates without embeddings directly
   console.time("dedupAndMMR");
-  const relevantCandidates = [...merged.values()].filter((c) => {
-    if (!c.embedding) return false;
-
-    // Reject weak vector matches
-    if (c.distance !== null && c.distance > MAX_DISTANCE_THRESHOLD) {
-      return false;
-    }
-
-    // Reject pure BM25 hits that have no semantic vector match at all
-    if (c.source === "bm25" && c.distance == null) {
-      return false; 
-    }
-
-    return true;
-  });
+  const relevantCandidates = [...merged.values()].filter((c) => Boolean(c.embedding));
 
   const deduped = deduplicateCandidates(relevantCandidates);
   const final = mmrRerank(queryEmbedding, deduped, topK);
   console.timeEnd("dedupAndMMR");
 
-  // 7. Return structured results
+  // 6. Return structured results
   return {
     chunks: final.map((r) => r.document),
     distances: final.map((r) => r.distance ?? null),
