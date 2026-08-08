@@ -152,7 +152,7 @@ const ChatInput = ({
           disabled={isTyping}
           placeholder={chatConfig.placeholder}
           className="
-            min-h-[40px]
+            min-h-10
             max-h-36
             flex-1
             resize-none

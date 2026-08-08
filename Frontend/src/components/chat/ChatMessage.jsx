@@ -1,7 +1,6 @@
 import { Bot, User } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import remarkGfm from "remark-gfm" ;
 
 const ChatMessage = ({ message }) => {
   const isUser = message.role === "user";
@@ -63,7 +62,7 @@ const ChatMessage = ({ message }) => {
 
           {/* Message */}
           {isUser ? (
-            <p className="whitespace-pre-wrap break-words text-sm leading-6 sm:text-[15px] sm:leading-7">
+            <p className="whitespace-pre-wrap wrap-break-word text-sm leading-6 sm:text-[15px] sm:leading-7">
               {formattedMessage}
             </p>
           ) : (

@@ -15,7 +15,7 @@ const ChatHeader = ({
   setSourcesOpen,
 }) => {
   return (
-    <header className="flex min-h-[72px] shrink-0 items-center justify-between gap-2 border-b border-zinc-800 bg-zinc-950 px-3 sm:px-4 md:px-6">
+    <header className="flex min-h-18 shrink-0 items-center justify-between gap-2 border-b border-zinc-800 bg-zinc-950 px-3 sm:px-4 md:px-6">
       {/* =====================================================
           Left Section
       ====================================================== */}

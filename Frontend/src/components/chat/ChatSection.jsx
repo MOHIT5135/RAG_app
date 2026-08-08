@@ -149,7 +149,7 @@ const ChatSection = ({
             <div
               className={`
                 fixed inset-y-0 right-0 z-50
-                w-[88%] max-w-[380px]
+                w-[88%] max-w-95
                 transform transition-transform duration-300
 
                 md:relative
