@@ -1,7 +1,6 @@
 import { Bot, User } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import remarkGfm from "remark-gfm" ;
 
 const ChatMessage = ({ message }) => {
   const isUser = message.role === "user";
