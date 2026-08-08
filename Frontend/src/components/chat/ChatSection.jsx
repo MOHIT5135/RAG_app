@@ -22,11 +22,10 @@ const ChatSection = ({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sourcesOpen, setSourcesOpen] = useState(false);
 
-  // Upload Modal State
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
   return (
-    <section className="h-screen overflow-hidden bg-zinc-950">
+    <section className="h-screen w-full overflow-hidden bg-zinc-950">
 
       {/* Upload Modal */}
       <ChatUploadModal
@@ -34,34 +33,81 @@ const ChatSection = ({
         onClose={() => setUploadModalOpen(false)}
       />
 
-      <div className="flex h-full">
+      <div className="flex h-full w-full">
 
-        {/* Sidebar */}
-        <ChatSidebar
-          uploadedDocuments={uploadedDocuments}
-          activeDocument={activeDocument}
-          setActiveDocument={setActiveDocument}
-          isOpen={sidebarOpen}
-        />
+        {/* =====================================================
+            Sidebar
+        ====================================================== */}
 
-        {/* Main Content */}
-        <div className="flex flex-1 flex-col">
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-40 bg-black/60 md:hidden" />
+        )}
 
-          <ChatHeader
+        <div
+          className={`
+            fixed inset-y-0 left-0 z-50
+            w-[85%] max-w-[320px]
+            transform transition-transform duration-300
+
+            md:relative
+            md:z-auto
+            md:w-auto
+            md:max-w-none
+            md:transform-none
+
+            ${
+              sidebarOpen
+                ? "translate-x-0"
+                : "-translate-x-full md:w-0 md:opacity-0"
+            }
+          `}
+        >
+          <ChatSidebar
             uploadedDocuments={uploadedDocuments}
-            onNewChat={onNewChat}
-            sidebarOpen={sidebarOpen}
-            setSidebarOpen={setSidebarOpen}
-            sourcesOpen={sourcesOpen}
-            setSourcesOpen={setSourcesOpen}
+            activeDocument={activeDocument}
+            setActiveDocument={setActiveDocument}
+            isOpen={sidebarOpen}
           />
+        </div>
 
-          <div className="flex flex-1 overflow-hidden">
 
-            {/* Chat */}
-            <div className="flex flex-1 flex-col">
+        {/* =====================================================
+            Main Content
+        ====================================================== */}
 
-              <div className="flex-1 overflow-y-auto">
+        <div className="flex min-w-0 flex-1 flex-col">
+
+          {/* ===================================================
+              Header
+          ==================================================== */}
+
+          <div className="shrink-0">
+            <ChatHeader
+              uploadedDocuments={uploadedDocuments}
+              onNewChat={onNewChat}
+              sidebarOpen={sidebarOpen}
+              setSidebarOpen={setSidebarOpen}
+              sourcesOpen={sourcesOpen}
+              setSourcesOpen={setSourcesOpen}
+            />
+          </div>
+
+
+          {/* ===================================================
+              Middle Area
+          ==================================================== */}
+
+          <div className="relative flex min-h-0 flex-1 overflow-hidden">
+
+            {/* =================================================
+                Chat Area
+            ================================================== */}
+
+            <div className="flex min-w-0 flex-1 flex-col">
+
+              {/* Messages / Welcome */}
+
+              <div className="min-h-0 flex-1 overflow-hidden">
 
                 <ChatMessages
                   messages={messages}
@@ -70,19 +116,60 @@ const ChatSection = ({
 
               </div>
 
-              <ChatInput
-                onSend={onSend}
-                isTyping={isTyping}
-                onUploadClick={() => setUploadModalOpen(true)}
-              />
+
+              {/* =================================================
+                  Input
+              ================================================== */}
+
+              <div className="shrink-0">
+
+                <ChatInput
+                  onSend={onSend}
+                  isTyping={isTyping}
+                  onUploadClick={() => setUploadModalOpen(true)}
+                />
+
+              </div>
 
             </div>
 
-            {/* Sources */}
-            <SourceReferences
-              sources={sources}
-              isOpen={sourcesOpen}
-            />
+
+            {/* =================================================
+                Sources
+            ================================================== */}
+
+            {sourcesOpen && (
+              <div
+                className="fixed inset-0 z-40 bg-black/60 md:hidden"
+                onClick={() => setSourcesOpen(false)}
+              />
+            )}
+
+            <div
+              className={`
+                fixed inset-y-0 right-0 z-50
+                w-[88%] max-w-[380px]
+                transform transition-transform duration-300
+
+                md:relative
+                md:z-auto
+                md:w-auto
+                md:max-w-none
+                md:transform-none
+
+                ${
+                  sourcesOpen
+                    ? "translate-x-0"
+                    : "translate-x-full md:w-0 md:opacity-0"
+                }
+              `}
+            >
+              <SourceReferences
+                sources={sources}
+                isOpen={sourcesOpen}
+                onClose={() => setSourcesOpen(false)}
+              />
+            </div>
 
           </div>
 

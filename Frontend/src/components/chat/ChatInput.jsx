@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Paperclip,
   SendHorizontal,
@@ -13,6 +13,30 @@ const ChatInput = ({
 }) => {
 
   const [message, setMessage] = useState("");
+
+  const textareaRef = useRef(null);
+
+  /**
+   * ==========================================================
+   * Auto Resize Textarea
+   * ==========================================================
+   */
+
+  useEffect(() => {
+
+    const textarea = textareaRef.current;
+
+    if (!textarea) return;
+
+    textarea.style.height = "auto";
+
+    textarea.style.height = `${Math.min(
+      textarea.scrollHeight,
+      144
+    )}px`;
+
+  }, [message]);
+
 
   /**
    * ==========================================================
@@ -34,6 +58,7 @@ const ChatInput = ({
 
   };
 
+
   /**
    * ==========================================================
    * Enter Key
@@ -52,13 +77,44 @@ const ChatInput = ({
 
   };
 
+
   return (
 
-    <div className="border-t border-zinc-800 bg-zinc-950 px-5 py-4">
+    <div
+      className="
+        w-full
+        border-t
+        border-zinc-800
+        bg-zinc-950
+        px-3
+        py-3
+        sm:px-5
+        sm:py-4
+      "
+    >
+
+      {/* =====================================================
+          Input Container
+      ====================================================== */}
 
       <form
         onSubmit={handleSubmit}
-        className="mx-auto flex max-w-6xl items-center gap-3 rounded-3xl border border-zinc-700 bg-zinc-900 px-5 py-1 transition focus-within:border-violet-500"
+        className="
+          flex
+          w-full
+          items-end
+          gap-2
+          rounded-3xl
+          border
+          border-zinc-700
+          bg-zinc-900
+          px-3
+          py-2
+          transition
+          focus-within:border-violet-500
+          sm:gap-3
+          sm:px-4
+        "
       >
 
         {/* Upload */}
@@ -70,6 +126,7 @@ const ChatInput = ({
             flex
             h-10
             w-10
+            shrink-0
             items-center
             justify-center
             rounded-xl
@@ -80,14 +137,14 @@ const ChatInput = ({
             hover:text-white
           "
         >
-
           <Paperclip className="h-4 w-4" />
-
         </button>
+
 
         {/* Message */}
 
         <textarea
+          ref={textareaRef}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -95,17 +152,21 @@ const ChatInput = ({
           disabled={isTyping}
           placeholder={chatConfig.placeholder}
           className="
-            min-h-[24px]
+            min-h-[40px]
             max-h-36
             flex-1
             resize-none
+            overflow-y-auto
             bg-transparent
+            py-2
             text-[15px]
+            leading-6
             text-white
             placeholder:text-zinc-500
             outline-none
           "
         />
+
 
         {/* Send */}
 
@@ -114,11 +175,12 @@ const ChatInput = ({
           disabled={!message.trim() || isTyping}
           className="
             flex
-            h-9
-            w-9
+            h-10
+            w-10
+            shrink-0
             items-center
             justify-center
-            rounded-2xl
+            rounded-full
             bg-violet-600
             text-white
             transition
@@ -127,17 +189,27 @@ const ChatInput = ({
             disabled:bg-zinc-700
           "
         >
-
           <SendHorizontal className="h-4 w-4" />
-
         </button>
 
       </form>
 
-      <p className="mt-1 text-center text-xs text-zinc-500">
 
-        📎 Upload documents • Press <span className="font-medium">Enter</span> to send • <span className="font-medium">Shift + Enter</span> for a new line
+      {/* Hint */}
 
+      <p
+        className="
+          mt-1
+          hidden
+          text-center
+          text-xs
+          text-zinc-500
+          sm:block
+        "
+      >
+        📎 Upload documents • Press{" "}
+        <span className="font-medium">Enter</span> to send •{" "}
+        <span className="font-medium">Shift + Enter</span> for a new line
       </p>
 
     </div>

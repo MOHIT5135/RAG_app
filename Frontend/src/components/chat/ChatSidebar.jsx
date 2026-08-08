@@ -2,6 +2,7 @@ import {
   FileText,
   History,
   User,
+  X,
 } from "lucide-react";
 
 import UploadedDocuments from "./UploadedDocuments";
@@ -14,56 +15,64 @@ const ChatSidebar = ({
   activeDocument,
   setActiveDocument,
   isOpen,
+  setSidebarOpen,
 }) => {
   const { user } = useAuth();
 
   return (
     <aside
       className={`
-        flex flex-col
+        flex h-full flex-col
         border-r border-zinc-800
         bg-zinc-950
-        transition-all duration-300
         overflow-hidden
-        ${
-          isOpen
-            ? "w-64 opacity-100"
-            : "w-0 opacity-0 border-r-0"
-        }
+        transition-all duration-300
+        ${isOpen
+          ? "w-64 opacity-100"
+          : "w-0 opacity-0 border-r-0"}
       `}
     >
-      {/* ================= Workspace ================= */}
+      {/* =====================================================
+          Workspace Header
+      ====================================================== */}
+      <div className="shrink-0 border-b border-zinc-800 px-4 py-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold text-white">
+              Workspace
+            </h2>
 
-      <div className="border-b border-zinc-800 px-4 py-4">
+            <p className="mt-0.5 text-xs text-zinc-400">
+              Manage your documents
+            </p>
+          </div>
 
-        <h2 className="text-lg font-semibold text-white">
-          Workspace
-        </h2>
-
-        <p className="mt-0.5 text-xs text-zinc-400">
-          Manage your documents
-        </p>
-
+          {/* Close button - mobile only */}
+          {setSidebarOpen && (
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-800 hover:text-white md:hidden"
+              aria-label="Close sidebar"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* ================= Scrollable Area ================= */}
-
-      <div className="flex-1 overflow-y-auto">
+      {/* =====================================================
+          Scrollable Area
+      ====================================================== */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
 
         {/* Documents */}
-
-        <div className="px-4 pt-4">
-
+        <div className="px-3 pt-4 sm:px-4">
           <div className="mb-2 flex items-center gap-2">
-
-            <FileText className="h-4 w-4 text-violet-400" />
+            <FileText className="h-4 w-4 shrink-0 text-violet-400" />
 
             <span className="text-sm font-semibold text-white">
-
               Documents
-
             </span>
-
           </div>
 
           <UploadedDocuments
@@ -71,65 +80,45 @@ const ChatSidebar = ({
             activeDocument={activeDocument}
             onSelect={setActiveDocument}
           />
-
         </div>
 
         {/* History */}
-
-        <div className="mt-5 px-4 pb-4">
-
+        <div className="mt-5 px-3 pb-4 sm:px-4">
           <div className="mb-2 flex items-center gap-2">
-
-            <History className="h-4 w-4 text-violet-400" />
+            <History className="h-4 w-4 shrink-0 text-violet-400" />
 
             <span className="text-sm font-semibold text-white">
-
               History
-
             </span>
-
           </div>
 
-          <ChatHistory/>
-
+          <ChatHistory />
         </div>
-
       </div>
 
-      {/* ================= Bottom ================= */}
-
-      <div className="border-t border-zinc-800 p-4">
-
-        {/* Profile */}
-
-        <div className="flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900 p-2.5">
-
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-600">
-
+      {/* =====================================================
+          Bottom Profile
+      ====================================================== */}
+      <div className="shrink-0 border-t border-zinc-800 p-3 sm:p-4">
+        <div className="flex min-w-0 items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900 p-2.5">
+          
+          {/* Avatar */}
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-600">
             <User className="h-4 w-4 text-white" />
-
           </div>
 
+          {/* User Info */}
           <div className="min-w-0">
-
             <p className="truncate text-sm font-medium text-white">
-
               {user?.name || "User"}
-
             </p>
 
             <p className="truncate text-[11px] text-zinc-500">
-
               Developer Workspace
-
             </p>
-
           </div>
-
         </div>
-
       </div>
-
     </aside>
   );
 };
