@@ -1,5 +1,6 @@
-import { GoogleGenAI } from "@google/genai";
+import { EmbedContentResponse, GoogleGenAI } from "@google/genai";
 import { waitForCapacity, recordRequest } from "./rateLimiter.js";
+import { LRUCache } from "lru-cache";
 
 const EMBEDDING_MODEL = "gemini-embedding-2";
 
@@ -11,6 +12,12 @@ const DEFAULT_DIMENSIONS = 768;
 // Gemini's batch embed endpoint accepts a limited number of texts
 // per request; chunk large arrays to stay safely under that limit.
 const BATCH_SIZE = 40;
+
+// Initialize in-memory cache for query embeddings (Stores up to 500 queries for 2 hours)
+const queryEmbeddingCache = new LRUCache({
+  max: 500,
+  ttl: 1000 * 60 * 60 * 2, 
+});
 
 // Retries an embedding call with exponential backoff if rate-limited.
 /**
@@ -146,9 +153,17 @@ export const embedQuery = async (query, options = {}) => {
         throw new Error("embedQuery: `query` must be a non-empty string.");
     }
 
-    const ai = getClient();
     const dimensions = options.dimensions ?? DEFAULT_DIMENSIONS;
+    // Normalize key string to prevent duplicate cache entries for casing/whitespace
+    const cacheKey = `${EMBEDDING_MODEL}:${dimensions}:${query.trim().toLowerCase()}`;
 
+    // 1. Return cached embedding if available
+    if (queryEmbeddingCache.has(cacheKey)) {
+        console.log(`[Cache Hit] Serving cached embedding vector for query: "${query}"`);
+        return queryEmbeddingCache.get(cacheKey);
+    }
+    // 2. Fetch from API on cache miss
+    const ai = getClient();
      const response = await embedWithRetry(() =>
         ai.models.embedContent({
             model: EMBEDDING_MODEL,
@@ -157,7 +172,12 @@ export const embedQuery = async (query, options = {}) => {
         })
     );
 
-    return response.embeddings[0].values;
+    const embeddingVector = response.embeddings[0].values;
+
+    // 3. Save vector to LRU Cache before returning
+    queryEmbeddingCache.set(cacheKey, embeddingVector);
+
+    return embeddingVector;
 };
 
 /**

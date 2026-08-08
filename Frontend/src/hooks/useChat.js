@@ -23,97 +23,104 @@ const useChat = (activeDocument = null) => {
 
   /**
    * ==========================================================
-   * Current Conversation
-   * ==========================================================
-   */
-
-  /**
-   * ==========================================================
    * Send Message
    * ==========================================================
    */
 
   const sendMessage = async (query) => {
-
     if (!query.trim()) return;
 
     if (!activeDocument) {
-
       setError("Please select a document.");
-
       return;
-
     }
 
     setError(null);
 
+    // 1. Only push the user message initially
     const userMessage = createUserMessage(query);
-
     setMessages((prev) => [...prev, userMessage]);
 
+    // 2. This triggers your "Thinking..." UI bubble
     setIsTyping(true);
 
     try {
-
-      const response = await askQuestion({
-
+      await askQuestion({
         query,
-
         documentId: activeDocument.docId,
-
         totalChunks: activeDocument.totalChunks,
-
         chatId: selectedChat?._id || null,
 
+        onToken: (token) => {
+          // 3. The moment text arrives, hide the "Thinking..." bubble!
+          setIsTyping(false); 
+
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const lastMessage = newMessages[newMessages.length - 1];
+            
+            // 4. If the last message is still the user's, this is the FIRST token. 
+            // Create the assistant message dynamically.
+            if (lastMessage.role === "user") {
+              const newAssistantMsg = createAssistantMessage(token, []);
+              return [...newMessages, newAssistantMsg];
+            } 
+            
+            // 5. Otherwise, append the token to the existing assistant message
+            newMessages[newMessages.length - 1] = {
+              ...lastMessage,
+              content: lastMessage.content + token,
+            };
+            
+            return newMessages;
+          });
+        },
+
+        onComplete: async (metadata) => {
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const lastIndex = newMessages.length - 1;
+            newMessages[lastIndex] = {
+              ...newMessages[lastIndex],
+              sources: metadata.sources || [],
+            };
+            return newMessages;
+          });
+
+          setSources(metadata.sources || []);
+
+          if (metadata.chatId && !selectedChat) {
+            setSelectedChat({ _id: metadata.chatId });
+            await refreshHistory();
+          }
+        }
       });
 
-      if (response.chatId && !selectedChat) {
-
-        setSelectedChat({
-          _id: response.chatId,
-        });
-
-        await refreshHistory();
-
-      }
-
-      /**
-       * Store chatId returned by backend.
-       * First message creates a chat.
-       * Remaining messages reuse it.
-       */
-
-      const assistantMessage = createAssistantMessage(
-        response.answer,
-        response.sources || []
-      );
-
-      setMessages((prev) => [...prev, assistantMessage]);
-
-      setSources(response.sources || []);
-
     } catch (err) {
+      const message = err?.message || "Something went wrong.";
 
-      const message =
-        err?.message ||
-        "Something went wrong.";
+      setMessages((prev) => {
+        const newMessages = [...prev];
+        const lastMessage = newMessages[newMessages.length - 1];
 
-      const errorMessage =
-        createAssistantMessage(message);
-
-      setMessages((prev) => [
-        ...prev,
-        errorMessage,
-      ]);
+        // If it failed before any tokens arrived, push a new error message
+        if (lastMessage.role === "user") {
+           return [...newMessages, createAssistantMessage(message)];
+        }
+        
+        // If it failed mid-stream, append the error
+        newMessages[newMessages.length - 1] = {
+          ...lastMessage,
+          content: lastMessage.content + `\n\n[Error: ${message}]`,
+        };
+        return newMessages;
+      });
 
       setError(message);
-
     } finally {
-
+      // Ensure typing indicator is cleared even if it fails immediately
       setIsTyping(false);
-
     }
-
   };
 
   /**
@@ -123,23 +130,19 @@ const useChat = (activeDocument = null) => {
    */
 
   const clearChat = () => {
-
     setMessages([]);
     setSources([]);
     setSelectedChat(null);
     setError(null);
-
   };
 
   return {
-
     messages,
     sources,
     isTyping,
     error,
     sendMessage,
     clearChat,
-
   };
 
 };

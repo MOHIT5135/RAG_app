@@ -18,6 +18,9 @@ const B = 0.75;
  * Elasticsearch/OpenSearch) at real production scale.
  */
 export const bm25Search = async (query, docIds, userId, topN = 30) => {
+  const queryTerms = tokenize(query);
+  if (queryTerms.length === 0) return [];
+
   const collection = await getCollection();
 
   const whereConditions = [];
@@ -28,12 +31,22 @@ export const bm25Search = async (query, docIds, userId, topN = 30) => {
     whereConditions.push({ docId: { "$in": docIds } });
   }
 
-  const whereClause = whereConditions.length > 1
+  const baseWhere = whereConditions.length > 1
     ? { "$and": whereConditions }
     : whereConditions[0] || undefined;
     
+  // Query only documents containing at least one of the query terms
+  const documentFilters = queryTerms.map((term) => ({
+    "$contains": term,
+  }));
+
+  const documentWhere = documentFilters.length > 1
+    ? { "$or": documentFilters }
+    : documentFilters[0];
+
   const results = await collection.get({
-    where: whereClause,
+    where: baseWhere,
+    whereDocument: documentWhere,
     include: ["documents", "metadatas"],
   });
 
@@ -54,8 +67,6 @@ export const bm25Search = async (query, docIds, userId, topN = 30) => {
     const n = df.get(term) || 0;
     return Math.log(1 + (N - n + 0.5) / (n + 0.5));
   };
-
-  const queryTerms = tokenize(query);
 
   const scored = tokenizedDocs.map((tokens, i) => {
     const tf = new Map();
