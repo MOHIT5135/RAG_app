@@ -4,7 +4,7 @@ import TechCategory from "./TechCategory";
 
 export default function TechStack() {
   return (
-    <section className="relative overflow-hidden py-16">
+    <section className="relative overflow-hidden py-8 scroll-mt-20" id="docs">
 
       {/* Background Glow */}
 

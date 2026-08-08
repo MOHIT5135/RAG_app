@@ -20,24 +20,52 @@ const ChatMessages = ({
   return (
     <div
       ref={containerRef}
-      className="flex h-full flex-col overflow-y-auto px-6 py-6"
+      className="
+        flex
+        h-full
+        min-h-0
+        flex-col
+        overflow-y-auto
+        px-3
+        py-4
+        sm:px-6
+        sm:py-6
+      "
     >
 
       {messages.length === 0 ? (
-        <ChatWelcome />
+
+        /* =====================================================
+           Welcome Screen
+        ====================================================== */
+
+        <div className="flex min-h-full flex-1 items-center justify-center">
+
+          <ChatWelcome />
+
+        </div>
+
       ) : (
+
+        /* =====================================================
+           Messages
+        ====================================================== */
+
         <div className="flex flex-col gap-6">
 
           {messages.map((message) => (
+
             <ChatMessage
               key={message.id}
               message={message}
             />
+
           ))}
 
           {isTyping && <TypingIndicator />}
 
         </div>
+
       )}
 
     </div>

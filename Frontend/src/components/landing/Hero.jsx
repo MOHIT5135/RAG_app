@@ -7,7 +7,7 @@ export default function Hero() {
   const navigate = useNavigate();
 
   return (
-    <section className="relative overflow-hidden">
+    <section id="home" className="relative overflow-hidden scroll-mt-20" >
 
       {/* Background */}
       <div className="absolute inset-0 -z-10 overflow-hidden">

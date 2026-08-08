@@ -55,7 +55,7 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <section>
+    <section id="how-it-works" className="scroll-mt-20">
 
       <div className="mx-auto max-w-6xl px-6">
 
