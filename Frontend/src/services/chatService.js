@@ -13,7 +13,6 @@ export const askQuestion = async ({
 }) => {
   try {
     // Retrieve the auth token manually since we are bypassing the Axios 'api' instance
-    // Note: Change "token" to whatever key you use in localStorage or cookies
     const token = localStorage.getItem("token"); 
 
     // Replaced api.post with native fetch() to handle the ReadableStream
@@ -26,7 +25,7 @@ export const askQuestion = async ({
       },
       body: JSON.stringify({
         query,
-        documentId,
+        documentId,       // Automatically serializes array [ "id1", "id2" ]
         totalChunks,
         chatId,
       }),

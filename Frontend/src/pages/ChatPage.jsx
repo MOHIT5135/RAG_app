@@ -1,3 +1,4 @@
+import { useState } from "react";
 import ChatSection from "../components/chat/ChatSection";
 import useChat from "../hooks/useChat";
 
@@ -8,18 +9,17 @@ const ChatPage = () => {
   const {
     documents,
     loading,
-    activeDocument,
-    setActiveDocument,
   } = useDocuments();
+
+  const [selectedDocuments, setSelectedDocuments] = useState([]);
 
   const {
     messages,
     sources,
     isTyping,
-    error,
     sendMessage,
     clearChat,
-  } = useChat(activeDocument);
+  } = useChat(selectedDocuments);
 
   if (loading) {
     return (
@@ -34,12 +34,12 @@ const ChatPage = () => {
   return (
     <ChatSection
       uploadedDocuments={documents}
-      activeDocument={activeDocument}
-      setActiveDocument={setActiveDocument}
+     selectedDocuments={selectedDocuments}
+      setSelectedDocuments={setSelectedDocuments}
       messages={messages}
       sources={sources}
       isTyping={isTyping}
-      error={error}
+      // error={error}
       onSend={sendMessage}
       onNewChat={clearChat}
     />

@@ -9,12 +9,11 @@ import ChatUploadModal from "./ChatUploadModal";
 
 const ChatSection = ({
   uploadedDocuments,
-  activeDocument,
-  setActiveDocument,
+  selectedDocuments,
+  setSelectedDocuments,
   messages,
   sources,
   isTyping,
-  error,
   onSend,
   onNewChat,
 }) => {
@@ -64,8 +63,8 @@ const ChatSection = ({
         >
           <ChatSidebar
             uploadedDocuments={uploadedDocuments}
-            activeDocument={activeDocument}
-            setActiveDocument={setActiveDocument}
+            selectedDocuments={selectedDocuments}
+            setSelectedDocuments={setSelectedDocuments}
             isOpen={sidebarOpen}
             setSidebarOpen={setSidebarOpen}
           />

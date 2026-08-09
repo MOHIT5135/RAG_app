@@ -16,7 +16,7 @@ const chatSchema = new mongoose.Schema(
      * Selected document
      */
     documentId: {
-      type: String,
+      type: [String],
       required: true,
       index: true,
     },

@@ -12,8 +12,8 @@ import { useAuth } from "@/context/AuthContext";
 
 const ChatSidebar = ({
   uploadedDocuments,
-  activeDocument,
-  setActiveDocument,
+  selectedDocuments,
+  setSelectedDocuments, 
   isOpen,
   setSidebarOpen,
 }) => {
@@ -77,8 +77,8 @@ const ChatSidebar = ({
 
           <UploadedDocuments
             documents={uploadedDocuments}
-            activeDocument={activeDocument}
-            onSelect={setActiveDocument}
+            selectedDocuments={selectedDocuments}
+            setSelectedDocuments={setSelectedDocuments}
           />
         </div>
 

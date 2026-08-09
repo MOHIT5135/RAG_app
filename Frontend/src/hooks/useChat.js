@@ -7,8 +7,7 @@ import {
   createUserMessage,
 } from "../utils/messageFormatter";
 
-const useChat = (activeDocument = null) => {
-
+const useChat = (selectedDocuments = []) => {
   const {
     messages,
     setMessages,
@@ -30,25 +29,31 @@ const useChat = (activeDocument = null) => {
   const sendMessage = async (query) => {
     if (!query.trim()) return;
 
-    if (!activeDocument) {
-      setError("Please select a document.");
+    if (!selectedDocuments || selectedDocuments.length === 0) {
+      setError("Please select at least one document.");
       return;
     }
-
     setError(null);
 
     // 1. Only push the user message initially
     const userMessage = createUserMessage(query);
     setMessages((prev) => [...prev, userMessage]);
 
-    // 2. This triggers your "Thinking..." UI bubble
+    // 2. This triggers "Thinking..." UI bubble
     setIsTyping(true);
+
+    // Extract array of docIds and sum total chunks for adaptive topK scaling
+    const docIds = selectedDocuments.map((doc) => doc.docId);
+    const combinedTotalChunks = selectedDocuments.reduce(
+      (sum, doc) => sum + (doc.totalChunks || 0),
+      0
+    );
 
     try {
       await askQuestion({
         query,
-        documentId: activeDocument.docId,
-        totalChunks: activeDocument.totalChunks,
+        documentId: docIds, // Pass array of docIds
+        totalChunks: combinedTotalChunks,
         chatId: selectedChat?._id || null,
 
         onToken: (token) => {

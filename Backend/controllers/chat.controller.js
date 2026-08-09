@@ -10,6 +10,13 @@ import { answerWithCitations } from "../services/chatServices.js";
 export const askQuestion = async (req, res) => {
   try {
     const { query, documentId, totalChunks, chatId } = req.body;
+    if (documentId && !Array.isArray(documentId)) {
+      documentId = [documentId];
+    }
+
+    // Handles both string ("doc_123") and string[] (["doc_123", "doc_456"])
+    const docIds = Array.isArray(documentId) ? documentId : documentId ? [documentId] : null;
+    
 
     if (!query || typeof query !== "string") {
       return res.status(400).json({
@@ -91,7 +98,7 @@ export const askQuestion = async (req, res) => {
 
       result = await answerWithCitations({
         userInput: query,
-        documentId,
+        documentId: docIds,
         totalChunks: totalChunks || 10,
         userId,
         history,
