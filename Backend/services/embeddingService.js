@@ -160,6 +160,7 @@ export const embedQuery = async (query, options = {}) => {
     // 1. Return cached embedding if available
     if (queryEmbeddingCache.has(cacheKey)) {
         console.log(`[Cache Hit] Serving cached embedding vector for query: "${query}"`);
+        console.log("Current Cache contents: ", Array.from(queryEmbeddingCache.entries()));
         return queryEmbeddingCache.get(cacheKey);
     }
     // 2. Fetch from API on cache miss

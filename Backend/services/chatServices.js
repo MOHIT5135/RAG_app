@@ -89,7 +89,8 @@ export const answerWithCitations = async ({
   if (!userId) {
     throw new Error("answerWithCitations: `userId` is required.");
   }
-  const docIds = documentId ? [documentId] : null;
+  
+  const docIds = Array.isArray(documentId) ? documentId : (documentId ? [documentId] : null);
   const topK = getAdaptiveTopK(totalChunks || 10);
 
   let queryToSearch = userInput;
