@@ -105,7 +105,7 @@ const handleUpload = async () => {
             type="file"
             hidden
             multiple
-            accept=".pdf,.doc,.docx,.txt"
+            accept=".pdf,.doc,.docx,.ppt,.pptx,.txt"
             onChange={handleFileChange}
         />
 
@@ -239,7 +239,7 @@ const handleUpload = async () => {
 
             <div className="mt-4 flex flex-wrap gap-2">
 
-              {["PDF", "DOCX", "DOC", "TXT"].map((type) => (
+              {["PDF", "DOCX", "DOC", "PPT", "PPTX", "TXT"].map((type) => (
 
                 <span
                   key={type}

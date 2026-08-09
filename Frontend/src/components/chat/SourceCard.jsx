@@ -1,11 +1,14 @@
+import { useState } from "react";
 import {
   FileText,
   Hash,
   Brain,
   ArrowUpRight,
+  ChevronUp,
 } from "lucide-react";
 
 const SourceCard = ({ source }) => {
+  const [expanded, setExpanded] = useState(false);
 
   // Convert distance to similarity percentage
   const similarity =
@@ -14,12 +17,12 @@ const SourceCard = ({ source }) => {
       : "N/A";
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 transition-all duration-200 hover:border-violet-500">
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
 
       {/* Document Name */}
       <div className="flex items-center gap-2">
 
-        <FileText className="h-4 w-4 text-violet-400" />
+        <FileText className="h-4 w-4 shrink-0 text-violet-400" />
 
         <h3
           className="truncate text-sm font-semibold text-white"
@@ -66,12 +69,16 @@ const SourceCard = ({ source }) => {
       </div>
 
       {/* Preview */}
-      <div className="mt-4 rounded-lg border border-zinc-800 bg-zinc-950 p-3">
-
-        <p className="line-clamp-4 text-xs leading-6 text-zinc-400">
+      <div
+        className={`mt-4 rounded-lg border border-zinc-800 bg-zinc-950 p-3 ${
+          expanded
+            ? "max-h-64 overflow-y-auto"
+            : "max-h-36 overflow-hidden"
+        }`}
+      >
+        <p className="text-xs leading-6 text-zinc-400">
           {source.text}
         </p>
-
       </div>
 
       {/* Footer */}
@@ -82,11 +89,21 @@ const SourceCard = ({ source }) => {
         </span>
 
         <button
+          type="button"
+          onClick={() => setExpanded((prev) => !prev)}
           className="flex items-center gap-1 text-xs font-medium text-violet-400 transition hover:text-violet-300"
         >
-          View
-
-          <ArrowUpRight className="h-3.5 w-3.5" />
+          {expanded ? (
+            <>
+              Collapse
+              <ChevronUp className="h-3.5 w-3.5" />
+            </>
+          ) : (
+            <>
+              View
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </>
+          )}
         </button>
 
       </div>
