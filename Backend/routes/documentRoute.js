@@ -4,7 +4,7 @@ import path from "path";
 import multer from "multer"; 
 import { v4 as uuidv4 } from "uuid";
 import { upload } from "../middlewares/uploadMiddleware.js";
-import { extractTextFromFile } from "../services/documentProcessor.js";
+import { extractTextFromFile } from "../services/documentprocessor.js";
 import { chunkFiles } from "../services/chunkService.js";
 import { embedChunkedFiles } from "../services/embeddingService.js";
 import { storeVectors } from "../services/vectorService.js";

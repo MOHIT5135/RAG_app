@@ -17,16 +17,8 @@ import { errorHandler } from "./middlewares/errorHandler.js";
 import historyRoutes from "./routes/history.routes.js";
 
 if (!process.env.MONGO_URI) {
-  throw new Error("MONGO_URI is missing in .env file");
+  throw new Error("MONGO_URI environment variable is missing");
 }
-
-/**
- * ==========================================================
- * Database Connections
- * ==========================================================
- */
-connectDB();
-checkHeartbeat();
 
 const app = express();
 
@@ -35,9 +27,14 @@ const app = express();
  * CORS Configuration
  * ==========================================================
  */
+const allowedOrigins = [
+  "http://localhost:5173",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     credentials: true,
   })
@@ -102,8 +99,40 @@ app.use(errorHandler);
  * Start Server
  * ==========================================================
  */
-const PORT = process.env.PORT || 5000;
+/**
+ * ==========================================================
+ * Start Server
+ * ==========================================================
+ */
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+const startServer = async () => {
+  try {
+
+    // Connect to MongoDB
+    console.log("Connecting to MongoDB...");
+
+    await connectDB();
+
+    // Check ChromaDB
+    console.log("Checking ChromaDB connection...");
+
+    await checkHeartbeat();
+
+    // Start Express server
+    const PORT = process.env.PORT || 8080;
+
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+
+  } catch (error) {
+
+    console.error(
+      `[Startup Error] ${error.message}`
+    );
+
+    process.exit(1);
+  }
+};
+
+startServer();

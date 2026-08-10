@@ -1,4 +1,9 @@
 node_modules/
 .env
+.env.*
 debug_chunks/
 chroma_data/
+uploads/
+*.log
+npm-debug.log
+.DS_Store
