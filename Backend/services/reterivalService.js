@@ -1,4 +1,4 @@
-import { getCollection } from "../config/chroma.js";
+import { Chunk, VECTOR_INDEX_NAME } from "../config/vectorStore.js";
 import { embedQuery } from "./embeddingService.js";
 import { bm25Search } from "./bm25Service.js";
 import { mmrRerank, deduplicateCandidates } from "./mmrService.js";
@@ -29,34 +29,65 @@ export const retrieveRelevantChunks = async (userQuery, docIds, userId, topK = 5
   const queryEmbedding = await embedQuery(userQuery);
   console.timeEnd("embed query");
 
-  const collection = await getCollection();
-
   // 2. secure metadata filter for Chroma DB
-  const whereConditions = [{ userId: safeUserId }];
+  const filterConditions = [{ userId: { $eq: safeUserId } }];
   if (docIds && docIds.length > 0) {
-    whereConditions.push({ docId: { "$in": docIds } });
+    filterConditions.push({ docId: { $in: docIds } });
   }
-  const whereClause = whereConditions.length > 1 ? { "$and": whereConditions } : whereConditions[0];
+  const vectorFilter = filterConditions.length > 1 ? { $and: filterConditions } : filterConditions[0];
 
   // 3. Run Dense Vector Search & Sparse BM25 Search concurrently in parallel
   console.time("parallelHybridSearch");
   const [vectorResults, bm25Candidates] = await Promise.all([
-    collection.query({
-      queryEmbeddings: [queryEmbedding],
-      nResults: FETCH_POOL_SIZE,
-      where: whereClause,
-      include: ["documents", "metadatas", "distances", "embeddings"],
-    }),
-    bm25Search(userQuery, docIds, safeUserId, FETCH_POOL_SIZE)
+    Chunk.aggregate([
+      {
+        $vectorSearch: {
+          index: VECTOR_INDEX_NAME,
+          path: "embedding",
+          queryVector: queryEmbedding,
+          numCandidates: FETCH_POOL_SIZE * 15,
+          limit: FETCH_POOL_SIZE,
+          filter: vectorFilter,
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          document: 1,
+          embedding: 1,
+          docId: 1,
+          userId: 1,
+          fileName: 1,
+          pageNumber: 1,
+          sectionHeader: 1,
+          chunkIndex: 1,
+          score: { $meta: "vectorSearchScore" },
+        },
+      },
+    ]),
+    bm25Search(userQuery, docIds, safeUserId, FETCH_POOL_SIZE),
   ]);
   console.timeEnd("parallelHybridSearch");
 
-  const vectorCandidates = (vectorResults.ids[0] || []).map((id, i) => ({
-    id,
-    document: vectorResults.documents[0][i],
-    metadata: vectorResults.metadatas[0][i],
-    embedding: vectorResults.embeddings[0][i],
-    distance: vectorResults.distances[0][i],
+ const vectorCandidates = vectorResults.map((r) => ({
+    id: r._id,
+    document: r.document,
+    metadata: {
+      docId: r.docId,
+      userId: r.userId,
+      fileName: r.fileName,
+      pageNumber: r.pageNumber,
+      sectionHeader: r.sectionHeader,
+      chunkIndex: r.chunkIndex,
+    },
+    embedding: r.embedding,
+    // NOTE: Atlas vectorSearchScore is a SIMILARITY (higher = better), the
+    // opposite direction of Chroma's "distance" (lower = better). Converting
+    // here so downstream code that expects "distance" semantics still works.
+    // Double-check mmrService.js / any UI code that reads `.distance` against
+    // this — flip the sign back out if it turns out to expect a raw score.
+    distance: 1 - r.score,
+    score: r.score,
     source: "vector",
   }));
 

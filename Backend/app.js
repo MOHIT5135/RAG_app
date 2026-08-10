@@ -7,10 +7,8 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 
 import apiRoutes from "./routes/apiRoutes.js";
-import chromaCollection from "./chromaCollection.js";
 
 import { connectDB } from "./config/db.js";
-import { checkHeartbeat } from "./config/chroma.js";
 
 import { requestLogger } from "./middlewares/logger.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
@@ -71,14 +69,6 @@ app.use("/api/v1/history", historyRoutes);
 
 /**
  * ==========================================================
- * Temporary Route
- * ChromaDB Collection Viewer
- * ==========================================================
- */
-app.use("/all-documents", chromaCollection);
-
-/**
- * ==========================================================
  * 404 Route
  * ==========================================================
  */
@@ -112,11 +102,6 @@ const startServer = async () => {
     console.log("Connecting to MongoDB...");
 
     await connectDB();
-
-    // Check ChromaDB
-    console.log("Checking ChromaDB connection...");
-
-    await checkHeartbeat();
 
     // Start Express server
     const PORT = process.env.PORT || 8080;

@@ -10,7 +10,7 @@ import { embedChunkedFiles } from "../services/embeddingService.js";
 import { storeVectors } from "../services/vectorService.js";
 import Document from "../models/Document.js";
 import { authenticateUser } from "../middlewares/authMiddleware.js";
-import { deleteDocumentVectors } from "../config/chroma.js";
+import { deleteDocumentVectors } from "../config/vectorStore.js";
 const router = express.Router();
 
 /*
