@@ -11,10 +11,12 @@ import { generateToken } from "../utils/jwt.js";
  * Cookie Configuration
  * ==========================================================
  */
+const isProduction = process.env.NODE_ENV === "production";
+
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
+  secure: isProduction, // must be true whenever sameSite is "none"
+  sameSite: isProduction ? "none" : "lax", // "none" required for cross-domain (Netlify -> Render)
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 Days
 };
 
