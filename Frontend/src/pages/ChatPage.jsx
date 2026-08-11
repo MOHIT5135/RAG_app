@@ -1,17 +1,24 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
 import ChatSection from "../components/chat/ChatSection";
 import useChat from "../hooks/useChat";
-
 import { useDocuments } from "@/context/DocumentContext";
 
 const ChatPage = () => {
-
-  const {
-    documents,
-    loading,
-  } = useDocuments();
+  const { documents, loading } = useDocuments();
 
   const [selectedDocuments, setSelectedDocuments] = useState([]);
+
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem("ragify-theme") !== "light";
+  });
+
+  useEffect(() => {
+    localStorage.setItem(
+      "ragify-theme",
+      darkMode ? "dark" : "light"
+    );
+  }, [darkMode]);
 
   const {
     messages,
@@ -23,8 +30,14 @@ const ChatPage = () => {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-zinc-950">
-        <p className="text-zinc-400">
+      <div
+        className={`flex h-screen items-center justify-center ${
+          darkMode
+            ? "bg-zinc-950 text-white"
+            : "bg-zinc-50 text-zinc-900"
+        }`}
+      >
+        <p className={darkMode ? "text-zinc-400" : "text-zinc-600"}>
           Loading your documents...
         </p>
       </div>
@@ -34,14 +47,15 @@ const ChatPage = () => {
   return (
     <ChatSection
       uploadedDocuments={documents}
-     selectedDocuments={selectedDocuments}
+      selectedDocuments={selectedDocuments}
       setSelectedDocuments={setSelectedDocuments}
       messages={messages}
       sources={sources}
       isTyping={isTyping}
-      // error={error}
       onSend={sendMessage}
       onNewChat={clearChat}
+      darkMode={darkMode}
+      setDarkMode={setDarkMode}
     />
   );
 };

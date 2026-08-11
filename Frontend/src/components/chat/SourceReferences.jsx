@@ -6,15 +6,28 @@ const SourceReferences = ({
   sources = [],
   isOpen = false,
   onClose = () => {},
+  darkMode = true,
 }) => {
   return (
     <>
       {/* =====================================================
           Mobile Backdrop
       ====================================================== */}
+
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          className={`
+            fixed
+            inset-0
+            z-40
+            lg:hidden
+
+            ${
+              darkMode
+                ? "bg-black/70"
+                : "bg-black/40"
+            }
+          `}
           onClick={onClose}
         />
       )}
@@ -22,6 +35,7 @@ const SourceReferences = ({
       {/* =====================================================
           Sources Panel
       ====================================================== */}
+
       <aside
         className={`
           fixed
@@ -31,12 +45,15 @@ const SourceReferences = ({
           h-full
           w-[85%]
           max-w-sm
-          border-l
-          border-zinc-800
-          bg-zinc-950
           shadow-2xl
           transition-all
           duration-300
+
+          ${
+            darkMode
+              ? "border-l border-zinc-800 bg-zinc-950"
+              : "border-l border-zinc-200 bg-white"
+          }
 
           lg:static
           lg:z-auto
@@ -58,59 +75,101 @@ const SourceReferences = ({
           {/* =================================================
               Header
           ================================================== */}
+
           <div
-            className="
+            className={`
               flex
               shrink-0
               items-center
               justify-between
               border-b
-              border-zinc-800
               px-4
               py-4
-            "
+
+              ${
+                darkMode
+                  ? "border-zinc-800"
+                  : "border-zinc-200"
+              }
+            `}
           >
             <div className="flex min-w-0 items-center gap-2">
 
-              <Library className="h-5 w-5 shrink-0 text-violet-400" />
+              <Library
+                className={`
+                  h-5
+                  w-5
+                  shrink-0
 
-              <h2 className="text-sm font-semibold text-white">
+                  ${
+                    darkMode
+                      ? "text-violet-400"
+                      : "text-violet-600"
+                  }
+                `}
+              />
+
+              <h2
+                className={`
+                  text-sm
+                  font-semibold
+
+                  ${
+                    darkMode
+                      ? "text-white"
+                      : "text-zinc-900"
+                  }
+                `}
+              >
                 Sources
               </h2>
 
+              {/* Source Count */}
+
               <span
-                className="
+                className={`
                   rounded-full
-                  bg-violet-600/20
                   px-2
                   py-0.5
                   text-xs
-                  text-violet-400
-                "
+
+                  ${
+                    darkMode
+                      ? "bg-violet-600/20 text-violet-400"
+                      : "bg-violet-100 text-violet-600"
+                  }
+                `}
               >
                 {sources.length}
               </span>
 
             </div>
 
-            {/* Mobile Close */}
+            {/* =================================================
+                Mobile Close
+            ================================================== */}
+
             <button
               type="button"
               onClick={onClose}
-              className="
+              className={`
                 flex
-                h-8
-                w-8
+                h-9
+                w-9
                 shrink-0
                 items-center
                 justify-center
                 rounded-lg
-                text-zinc-400
                 transition
-                hover:bg-zinc-800
-                hover:text-white
+
+                ${
+                  darkMode
+                    ? "text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                    : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
+                }
+
                 lg:hidden
-              "
+              `}
               aria-label="Close sources"
             >
               <X className="h-5 w-5" />
@@ -135,7 +194,18 @@ const SourceReferences = ({
                 text-center
               "
             >
-              <p className="text-sm leading-6 text-zinc-500">
+              <p
+                className={`
+                  text-sm
+                  leading-6
+
+                  ${
+                    darkMode
+                      ? "text-zinc-500"
+                      : "text-zinc-500"
+                  }
+                `}
+              >
                 Ask a question to see
                 <br />
                 source references.
@@ -158,6 +228,7 @@ const SourceReferences = ({
                 <SourceCard
                   key={`${source.fileName}-${index}`}
                   source={source}
+                  darkMode={darkMode}
                 />
               ))}
             </div>
