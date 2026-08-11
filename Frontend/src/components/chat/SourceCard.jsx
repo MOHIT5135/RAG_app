@@ -209,7 +209,7 @@ const SourceCard = ({
       >
         <p
           className={`
-            break-words
+            wrap-break-word
             text-xs
             leading-6
 
