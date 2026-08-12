@@ -103,10 +103,17 @@ const chunkArray = (arr, size) => {
  * @returns {Promise<number[][]>} one embedding vector per input text
  */
 export const embedDocuments = async (texts, options = {}) => {
-    if (!Array.isArray(texts) || texts.length === 0) {
-        throw new Error("embedDocuments: `texts` must be a non-empty array of strings.");
+    if (
+        !Array.isArray(texts) ||
+        texts.length === 0 ||
+        texts.some(
+            (text) => typeof text !== "string" || !text.trim()
+        )
+    ) {
+        throw new Error(
+            "embedDocuments: `texts` must be a non-empty array of non-empty strings."
+        );
     }
-
     const ai = getClient();
     const dimensions = options.dimensions ?? DEFAULT_DIMENSIONS;
     const batches = chunkArray(texts, BATCH_SIZE);
@@ -192,6 +199,19 @@ export const embedChunkedFiles = async (chunkedFiles) => {
     const results = [];
 
     for (const file of chunkedFiles) {
+
+        const validChunks = file.chunks.filter(
+            chunk =>
+                typeof chunk.text === "string" &&
+                chunk.text.trim().length > 0
+        );
+
+        if (validChunks.length === 0) {
+            throw new Error(
+                `No valid text chunks available for "${file.originalName}".`
+            );
+        }
+        
         const texts = file.chunks.map((c) => c.text);
 
         const vectors = await embedDocuments(texts);

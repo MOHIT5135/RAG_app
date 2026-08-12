@@ -52,6 +52,14 @@ router.post(
             // Returns Array<{ text: string, metadata: { pageNumber?, sectionHeader? } }>
             const segments = await extractTextFromFile(file.path);
 
+            if (!Array.isArray(segments) || segments.length === 0) {
+                return res.status(422).json({
+                    success: false,
+                    message: `No readable text could be extracted from "${file.originalname}". The PDF may be scanned/image-based or contain no selectable text.`,
+                    fileName: file.originalname
+                });
+            }
+
             // Calculate total extracted character length across all segments
             const totalChars = segments.reduce((sum, seg) => sum + (seg.text?.length || 0), 0);
 
@@ -68,6 +76,16 @@ router.post(
             processedFiles.map(f => ({ originalName: f.originalName, extractedSegments: f.extractedSegments })),
             { chunkSize: 1250, chunkOverlap: 150 }
         );
+
+        for (const file of chunkedResults) {
+            if (!file.chunks || file.chunks.length === 0) {
+                return res.status(422).json({
+                    success: false,
+                    message: `No valid text chunks were generated for "${file.originalName}".`,
+                    fileName: file.originalName
+                });
+            }
+        }
 
          // Step 2: Embed
         const embeddedResults = await embedChunkedFiles(chunkedResults);

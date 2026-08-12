@@ -5,44 +5,45 @@ import {
 
 import { useChatHistory } from "@/context/ChatHistoryContext";
 
-const ChatHistory = () => {
-
+const ChatHistory = ( {darkMode}) => {
   const {
-
     history,
-
     selectedChat,
-
     loadConversation,
-
     removeConversation,
-
   } = useChatHistory();
 
+  // ==========================================================
+  // Empty State
+  // ==========================================================
+
   if (history.length === 0) {
-
     return (
-
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3">
-
-        <p className="text-center text-xs text-zinc-500">
-
+      <div className={`
+        rounded-xl border p-3 ${ darkMode ? 
+        "border-zinc-800 bg-zinc-900" : "border-zinc-200 bg-white" }`} 
+      >
+        <p
+          className={`text-center text-xs ${
+            darkMode
+              ? "text-zinc-500"
+              : "text-zinc-400"
+          }`}
+        >
           No conversations yet
-
         </p>
-
       </div>
-
     );
-
   }
 
-  return (
+  // ==========================================================
+  // History List
+  // ==========================================================
 
+  return (
     <div className="space-y-1">
 
       {history.map((chat) => {
-
         const isActive =
           selectedChat?._id === chat._id;
 
@@ -67,8 +68,12 @@ const ChatHistory = () => {
 
               ${
                 isActive
-                  ? "border-violet-500 bg-violet-500/10"
-                  : "border-zinc-800 bg-zinc-900 hover:border-violet-500 hover:bg-zinc-800"
+                  ? darkMode
+                    ? "border-violet-500 bg-violet-500/10"
+                    : "border-violet-400 bg-violet-50"
+                  : darkMode
+                    ? "border-zinc-800 bg-zinc-900 hover:border-violet-500 hover:bg-zinc-800"
+                    : "border-zinc-200 bg-white hover:border-violet-400 hover:bg-violet-50"
               }
             `}
           >
@@ -87,13 +92,19 @@ const ChatHistory = () => {
 
                 ${
                   isActive
-                    ? "bg-violet-600/30"
-                    : "bg-violet-600/15"
+                    ? darkMode
+                      ? "bg-violet-600/30"
+                      : "bg-violet-100"
+                    : darkMode
+                      ? "bg-violet-600/15"
+                      : "bg-violet-50"
                 }
               `}
             >
 
-              <MessageSquare className="h-4 w-4 text-violet-400" />
+              <MessageSquare
+                className="h-4 w-4 text-violet-400"
+              />
 
             </div>
 
@@ -102,7 +113,11 @@ const ChatHistory = () => {
             <div className="min-w-0 flex-1">
 
               <p
-                className="truncate text-sm font-medium text-white"
+                className={`truncate text-sm font-medium ${
+                  darkMode
+                    ? "text-white"
+                    : "text-zinc-900"
+                }`}
                 title={chat.title}
               >
 
@@ -122,25 +137,29 @@ const ChatHistory = () => {
                 removeConversation(chat._id);
 
               }}
-              className="
+              className={`
                 h-4
                 w-4
                 shrink-0
-                text-zinc-500
-                opacity-0
                 transition-all
-                hover:text-red-400
+
+                ${
+                  darkMode
+                    ? "text-zinc-500 hover:text-red-400"
+                    : "text-zinc-400 hover:text-red-500"
+                }
+
                 group-hover:opacity-100
-              "
+              `}
             />
 
           </button>
 
         );
 
-      })}
+    })}
 
-    </div>
+  </div>
 
   );
 
