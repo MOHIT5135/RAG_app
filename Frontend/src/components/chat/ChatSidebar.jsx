@@ -5,6 +5,7 @@ import {
   X,
   LogOut,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom"; // Added missing import if needed elsewhere
 
 import UploadedDocuments from "./UploadedDocuments";
 import ChatHistory from "./ChatHistory";
@@ -20,7 +21,8 @@ const ChatSidebar = ({
   darkMode,
 }) => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Now valid if used
+
   return (
     <aside
       className={`
