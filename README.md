@@ -1,5 +1,7 @@
 # RAGify AI
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-ragifyy.netlify.app-8B5CF6?style=for-the-badge&logo=netlify&logoColor=white)](https://ragifyy.netlify.app/)
+
 A production-grade Retrieval-Augmented Generation (RAG) application that lets users upload documents (PDF, DOCX, TXT, PPTX) and ask natural-language questions, answered strictly from that content, with inline citations back to the exact source file and section.
 
 This isn't a weekend RAG demo — it's a system that was iteratively stress-tested against real failure modes (retrieval duplication, false-premise questions, tone-vs-accuracy conflation, rate-limit exhaustion), featuring **real-time SSE streaming, cross-document context pooling, and an automated regression harness.**
@@ -13,8 +15,8 @@ flowchart TD
     U[User] -->|Upload PDF/DOCX/TXT/PPTX| UP[Upload API]
     UP --> EX[Text Extraction<br/>page/section-aware]
     EX --> CH[Chunking<br/>RecursiveCharacterTextSplitter]
-    CH --> EMB[Embedding<br/>gemini-embedding-001]
-    EMB --> VDB[(ChromaDB<br/>vectors + metadata)]
+    CH --> EMB[Embedding<br/>gemini-embedding-2]
+    EMB --> VDB[(MongoDB Atlas<br/>Vector Search)]
     EMB --> MDB[(MongoDB<br/>docId / fileName / userId)]
 
     U -->|Select 1-to-N Docs & Ask| Q[Chat API]
@@ -43,7 +45,7 @@ flowchart TD
     RESP --> U
 ```
 
-**Request flow, in short:** A question is rewritten into a clean standalone query (aware of prior chat turns). The system checks an **in-memory LRU cache** to prevent redundant API embedding costs. The query is then searched two ways at once across the user's selected document array — dense vector similarity and sparse BM25 keyword matching. Results are merged, deduplicated, and re-ranked with Maximal Marginal Relevance before being handed to the LLM, which streams its answer back to the client via **Server-Sent Events (SSE)**, citing every claim back to its source file and section.
+**Request flow, in short:** A question is rewritten into a clean standalone query (aware of prior chat turns). The system checks an **in-memory LRU cache** to prevent redundant API embedding costs. The query is then searched two ways at once across the user's selected document array — dense vector similarity and sparse BM25 keyword matching via MongoDB Atlas. Results are merged, deduplicated, and re-ranked with Maximal Marginal Relevance before being handed to the LLM, which streams its answer back to the client via **Server-Sent Events (SSE)**, citing every claim back to its source file and section.
 
 ---
 
@@ -51,9 +53,9 @@ flowchart TD
 
 | Layer | Technology |
 |---|---|
-| Backend | Node.js, Express |
-| Frontend | React, Vite, Tailwind CSS |
-| Vector Store | ChromaDB (self-hosted, Docker) |
+| Backend | Node.js, Express, Docker (Hosted on Render Free Tier) |
+| Frontend | React, Vite, Tailwind CSS (Hosted on Netlify) |
+| Vector Store | MongoDB Atlas Vector Search |
 | Metadata / Auth DB | MongoDB |
 | Embeddings | Gemini (`gemini-embedding-001`) |
 | Chat Generation | Gemini (`gemini-3.5-flash` / `gemini-3.5-flash-lite`) |
@@ -66,7 +68,7 @@ flowchart TD
 
 ## Key Features
 
-- **Multi-Document Cross-RAG** — users can select multiple documents simultaneously; the backend dynamically pools context using ChromaDB's `$in` array filtering across isolated vector spaces.
+- **Multi-Document Cross-RAG** — users can select multiple documents simultaneously; tthe backend dynamically pools context using MongoDB's `$in` array filtering across isolated vector spaces.
 - **Real-Time Streaming (SSE)** — token-by-token generation streamed natively to the frontend, eliminating long blocking request times for complex queries.
 - **Automated Evaluation Harness** — a programmatic regression script (`backend/evalHarness.js`) that tests the live API against 10 strict edge cases (factual recall, false-premise rejections, off-topic boundaries).
 - **LRU Embedding Caching** — normalizes and caches frequent user queries in-memory to slash API latency and embedding costs.
@@ -77,7 +79,7 @@ flowchart TD
 - **Tone-aware, fact-stable generation** — emotionally-worded questions get a warmer response tone without that emotion affecting what gets retrieved or stated as fact.
 - **Per-user document isolation** — enforced at both the database layer (MongoDB ownership checks) and the vector store layer (Chroma metadata filtering).
 - **Rate-limit resilient ingestion** — a proactive sliding-window limiter paces embedding requests against Gemini's actual RPM/TPM budget, with automatic backoff using the API's own suggested retry delay.
-
+- **Containerized Backend Deployment** — The backend API is fully containerized using Docker, ensuring 100% environment consistency between local development and the Render production deployment, preventing "it works on my machine" bugs.
 ---
 
 ## Key Design Decisions & Trade-offs
@@ -96,6 +98,8 @@ flowchart TD
 
 **Proactive rate-limit pacing over reactive retry-only.** Retry-after-failure alone proved insufficient for 100+ page documents. A sliding-window limiter that tracks cumulative token usage and paces requests *before* hitting the ceiling replaced blind retry logic.
 
+**Managed Vector Search & Containerization.**
+Because the application is deployed on Render's free tier as a Docker container—which spins down and does not provide persistent disk storage—the retrieval pipeline was migrated to MongoDB Atlas Vector Search. This decouples storage from compute, guaranteeing persistent embeddings while maintaining the portability of a containerized backend.
 ---
 
 ## Validation
@@ -158,27 +162,31 @@ Found docId: be80cd13-1050-48db-8d1f-6f9e7e427635 (56 chunks)
 
 Documented honestly rather than left as unstated gaps:
 
+- **Render Free Tier Cold Starts** —  The backend API is hosted on Render's free tier, which spins down after periods of inactivity. The first login or chat request after a period of idleness may take up to 30–60 seconds to process while the server wakes up
 - **Chunking is not table-aware** — tabular content in source documents is currently flattened. In DOCX, the HTML-stripping regex destroys `<table>` structure; in PDFs, Y-coordinate merging smashes columns together. A future fix requires translating these structural tags into Markdown grids prior to embedding.
 - **Deduplication doesn't scale past demo-corpus size** — the near-duplicate filter is $O(n^2)$; a large candidate pool would need an approximate/LSH-based approach instead.
 - **Free-tier API quotas are a real, hit constraint** — embedding and chat generation have both been rate-limited during heavy testing; a production deployment would need a paid tier.
 - **No rate-limit/cost visibility in the UI** — the system tracks and paces against real quota data internally, but doesn't yet surface it to the user.
+
 
 ---
 
 ## Setup
 
 ```bash
-# Backend
+# Backend (Standard)
 cd Backend
 npm install
 cp .env.example .env   # fill in MONGO_URI, GEMINI_API_KEY, JWT_SECRET
 npm run dev
 
+# Backend (Using Docker)
+cd Backend
+docker build -t ragify-backend .
+docker run -p 3000:3000 --env-file .env ragify-backend
+
 # Run Automated Test Harness (while backend is running)
 npm run eval
-
-# ChromaDB (Docker)
-docker run -d -p 8000:8000 -v ./chroma_data:/data --name ChromaDB chromadb/chroma
 
 # Frontend
 cd Frontend

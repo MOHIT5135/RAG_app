@@ -84,13 +84,12 @@ export default function Hero() {
               </button>
 
               <Button
+                onClick={() => window.open("https://github.com/MOHIT5135/RAG_app", "_blank")}
                 variant="outline"
                 size="lg"
                 className="rounded-xl px-8 py-6 text-base transition-all hover:-translate-y-1"
               >
-
                 View GitHub
-
               </Button>
 
             </div>

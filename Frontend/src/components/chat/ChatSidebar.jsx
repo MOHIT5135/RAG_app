@@ -3,6 +3,7 @@ import {
   History,
   User,
   X,
+  LogOut,
 } from "lucide-react";
 
 import UploadedDocuments from "./UploadedDocuments";
@@ -17,8 +18,8 @@ const ChatSidebar = ({
   isOpen,
   setSidebarOpen,
 }) => {
-  const { user } = useAuth();
-
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   return (
     <aside
       className={`
@@ -117,6 +118,23 @@ const ChatSidebar = ({
               Developer Workspace
             </p>
           </div>
+          {/* Logout Button */}
+          <button
+            onClick={async () => {
+              if (logout) {
+                try {
+                  await logout();
+                  window.location.href = "/";
+                } catch (error) {
+                  console.error("Failed to log out:", error);
+                }
+              }
+            }}
+            className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-red-400"
+            title="Log out"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
       </div>
     </aside>

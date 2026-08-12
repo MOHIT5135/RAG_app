@@ -102,7 +102,7 @@ const ChatInput = ({
         className="
           flex
           w-full
-          items-end
+          items-center
           gap-2
           rounded-3xl
           border
