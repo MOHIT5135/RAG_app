@@ -98,8 +98,8 @@ flowchart TD
 
 **Proactive rate-limit pacing over reactive retry-only.** Retry-after-failure alone proved insufficient for 100+ page documents. A sliding-window limiter that tracks cumulative token usage and paces requests *before* hitting the ceiling replaced blind retry logic.
 
-**Managed Vector Search & Containerization.**
-Because the application is deployed on Render's free tier as a Docker container—which spins down and does not provide persistent disk storage—the retrieval pipeline was migrated to MongoDB Atlas Vector Search. This decouples storage from compute, guaranteeing persistent embeddings while maintaining the portability of a containerized backend.
+**Managed Vector Search & Containerization.** Because the application is deployed on Render's free tier as a Docker container—which spins down and does not provide persistent disk storage—the retrieval pipeline was migrated to MongoDB Atlas Vector Search. This decouples storage from compute, guaranteeing persistent embeddings while maintaining the portability of a containerized backend.
+
 ---
 
 ## Validation
